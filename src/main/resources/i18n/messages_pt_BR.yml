@@ -1,0 +1,30 @@
+error:
+  business:
+    forbidden:
+    
+    entity:
+      alreadyDeleted:
+      notFound:
+        
+    constraint:
+      check:
+      exclusion:
+      unique:
+      fk:
+      notNull:
+      
+  infrastructure:
+    
+    rate-limit:
+      exceeded:
+        
+    default:
+      
+    notification:
+      outbox:
+        persistence:
+        notFound":
+      provider:
+        notFound:
+      email:
+        delivery:
