@@ -1,14 +1,14 @@
-package com.kleberrhuan.houer.common.domain;
+/* (C)2025 Kleber Rhuan */
+package com.kleberrhuan.houer.common.domain.model;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
-
-import java.time.Instant;
 
 @Entity
 @Table(name = "audit_event", schema = "audit")
@@ -16,47 +16,48 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 public class AuditEvent {
-    
-    @AllArgsConstructor
-    @Getter
-    enum ActorType {
-        USER("USER"),
-        SYSTEM("SYSTEM");
-        private final String value;
-        
-        @Override
-        public String toString() {
-            return this.value;
-        }
+
+  @AllArgsConstructor
+  @Getter
+  enum ActorType {
+    USER("USER"),
+    SYSTEM("SYSTEM");
+
+    private final String value;
+
+    @Override
+    public String toString() {
+      return this.value;
     }
+  }
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    private String entity;
-    private Long entityId;
-    private String action;
-    private Instant ts;
+  private String entity;
+  private Object entityId;
+  private String action;
+  private Instant ts;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "actor_type", nullable = false)
-    private ActorType actorType = ActorType.USER;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "actor_type", nullable = false)
+  private ActorType actorType = ActorType.USER;
 
-    @Column(name = "actor_id")
-    private Long actorId;
+  @Column(name = "actor_id")
+  private Long actorId;
 
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Object payload;
+  @Type(JsonType.class)
+  @Column(columnDefinition = "jsonb")
+  private Object payload;
 
-    public void setActor(Long userId) {
-        this.actorType = ActorType.USER;
-        this.actorId = userId;
-    }
+  public void setActor(Long userId) {
+    this.actorType = ActorType.USER;
+    this.actorId = userId;
+  }
 
-    public void setSystemActor() {
-        this.actorType = ActorType.SYSTEM;
-        this.actorId = null;
-    }
+  public void setSystemActor() {
+    this.actorType = ActorType.SYSTEM;
+    this.actorId = null;
+  }
 }
