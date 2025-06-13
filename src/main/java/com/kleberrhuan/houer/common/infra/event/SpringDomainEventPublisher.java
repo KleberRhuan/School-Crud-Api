@@ -1,20 +1,19 @@
-package com.kleberrhuan.houer.common.application.publisher;
+/* (C)2025 Kleber Rhuan */
+package com.kleberrhuan.houer.common.infra.event;
 
+import com.kleberrhuan.houer.common.application.port.event.DomainEventPublisher;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SpringDomainEventPublisher 
-        implements DomainEventPublisher {
+@RequiredArgsConstructor
+public class SpringDomainEventPublisher implements DomainEventPublisher {
 
-    private final ApplicationEventPublisher springPublisher;
-    
-    public SpringDomainEventPublisher(ApplicationEventPublisher springPublisher) {
-        this.springPublisher = springPublisher;
-    }
-    
-    @Override
-    public <T> void publish(T event) {
-        springPublisher.publishEvent(event);
-    }
+  private final ApplicationEventPublisher springPublisher;
+
+  @Override
+  public <T> void publish(T event) {
+    springPublisher.publishEvent(event);
+  }
 }
