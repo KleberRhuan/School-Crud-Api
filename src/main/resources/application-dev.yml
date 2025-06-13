@@ -1,0 +1,87 @@
+# src/main/resources/application-dev.yml
+spring:
+  datasource:
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/houer}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 20000
+  
+  # Hot reload e desenvolvimento 
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+    livereload:
+      enabled: true
+    remote:
+      secret: houer-dev-secret
+  
+  # Configurações Flyway para ambiente de desenvolvimento
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    clean-disabled: false
+    locations: classpath:db/migration
+  
+  # Configurações JPA
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        generate_statistics: false
+    generate-ddl: false
+
+# Configurações de logging
+logging:
+  level:
+    org.springdoc: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.kleberrhuan: DEBUG
+    org.flywaydb: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+  file:
+    name: logs/houer-dev.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+
+# Configurações do servidor
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-stacktrace: always
+    include-message: always
+    include-exception: true
+    include-binding-errors: always
+
+# Configurações de desenvolvimento
+api:
+  swagger:
+    enabled: true
+
+# Rate limiting mais permissivo em desenvolvimento
+app:
+  rate-limit:
+    enabled: false
+  audit:
+    enabled: true
+    log-requests: true
+    log-responses: true
+    log-request-body: true
+    log-response-body: true
+    log-only-failures: false
+    max-body-size: 4096
+
+# Debug de email em desenvolvimento
+notification:
+  debug:
+    enabled: true
+    log-emails: true
