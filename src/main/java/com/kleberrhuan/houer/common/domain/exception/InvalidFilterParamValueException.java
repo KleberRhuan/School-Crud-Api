@@ -1,5 +1,5 @@
-/* (C)2025 Ludilens */
-package com.ludilens.esdrasresearch.common.domain.exception;
+/* (C)2025 Kleber Rhuan */
+package com.kleberrhuan.houer.common.domain.exception;
 
 import com.ludilens.esdrasresearch.common.interfaces.dto.error.ApiErrorType;
 import com.ludilens.esdrasresearch.common.interfaces.dto.error.MessageKey;
