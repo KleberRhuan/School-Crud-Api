@@ -1,4 +1,6 @@
+/* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.auth.infra.security.jwt;
 
-public class TokenPair {
-}
+import java.util.Optional;
+
+public record TokenPair(String access, Optional<String> refresh, long ttlSec) {}
