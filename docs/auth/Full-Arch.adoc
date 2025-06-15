@@ -1,0 +1,430 @@
+=== Visão Geral do Fluxo de Autenticação
+
+O sistema segue uma arquitetura stateless com JWTs curtos para acesso e refresh tokens persistidos. O SPA se comunica com a API por HTTP usando tokens no cabeçalho. Abaixo, o fluxo padrão:
+
+[plantuml,auth-flow,svg]
+----
+@startuml
+actor User
+participant "SPA (React/Angular)" as SPA
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "TokenProvider" as Token
+participant "PostgreSQL" as DB
+
+User -> SPA : Digita email/senha
+SPA -> Controller : POST /auth/login {email, senha}
+Controller -> Service : autentica()
+Service -> DB : busca usuário + valida hash senha
+Service -> Token : gera access/refresh tokens
+Token --> Service : {accessToken, refreshToken}
+Service -> DB : salva refreshToken
+Service --> Controller : tokens emitidos
+Controller -> SPA : HTTP 200 + tokens
+
+== Após login ==
+SPA -> API : Authorization: Bearer accessToken
+API -> Token : valida token
+Token --> API : claims
+API -> SPA : resposta segura
+
+== Renovação ==
+SPA -> Controller : POST /auth/refresh {refreshToken}
+Controller -> Service : valida refreshToken
+Service -> DB : busca e valida refreshToken
+Service -> Token : emite novo accessToken
+Token --> Service : novo accessToken
+Service -> Controller : HTTP 200 + accessToken
+Controller -> SPA : novo accessToken
+
+== Logout ==
+SPA -> Controller : POST /auth/logout {refreshToken}
+Controller -> Service : invalida refreshToken
+Service -> DB : deleta/invalida token
+Controller -> SPA : HTTP 200
+@enduml
+----
+
+Notas:
+- Access Token: 15 minutos de validade.
+- Refresh Token: 7 dias, armazenado em tabela com metadata (IP, agent, data de expiração).
+- O sistema é compatível com múltiplos refresh tokens por usuário (multi-dispositivo).
+
+=== Organização de Módulos e Pacotes
+
+A arquitetura seguirá a abordagem inspirada na Clean/Hexagonal Architecture, com divisão clara entre camadas de domínio, aplicação, infraestrutura e configuração.
+
+Estrutura de pacotes:
+
+[source,text]
+----
+com.exemplo.auth
+├── config                  # Beans, SecurityConfig, CORS, etc.
+├── domain
+│   ├── model              # Entidades: User, RefreshToken
+│   ├── repository         # Interfaces de persistência (ex: UserRepository)
+│   └── service            # Regras de negócio puras (ex: AuthDomainService)
+├── application
+│   ├── dto                # LoginRequest, TokenResponse, etc.
+│   ├── usecase            # Casos de uso (ex: AuthenticateUser, IssueTokens)
+│   └── exception          # Erros e códigos de falha (ex: InvalidCredentialsException)
+├── infrastructure
+│   ├── persistence        # Implementações JPA de repositórios
+│   ├── security           # JwtTokenProvider, filtros, handlers do Spring Security
+│   └── monitoring         # Métricas, logging estruturado, alertas
+├── interfaces
+│   └── web
+│       └── controller     # REST Controllers (ex: AuthController)
+└── AuthApplication.java   # Classe principal
+----
+
+Notas:
+- `domain`: independente de frameworks. Apenas regras de negócio puras.
+- `application`: orquestra os casos de uso. Chama domínio e infraestrutura.
+- `infrastructure`: dependente de frameworks (Spring, JPA, Redis, Micrometer).
+- `interfaces.web`: entrada HTTP via REST Controllers.
+- `config`: configuração de beans, segurança, CORS, CSRF, rate limiter, etc.
+
+Vantagens:
+- Alta testabilidade (domínio e aplicação independentes de Spring)
+- Evolução facilitada (ex: integração com OIDC futura afeta só a camada de infraestrutura)
+- Responsabilidades claras para novos desenvolvedores
+
+=== Componentes-Chave
+
+[cols="1,3"]
+|===
+| Componente | Responsabilidade
+
+| `AuthController`
+| Expor os endpoints REST: `/auth/login`, `/auth/refresh`, `/auth/logout`.
+
+| `AuthenticationUseCase`
+| Caso de uso principal: autentica o usuário e orquestra emissão dos tokens.
+
+| `TokenService`
+| Geração, parsing e validação de JWTs (access + refresh). Centraliza lógica de criptografia.
+
+| `RefreshTokenRepository`
+| Acesso ao banco de dados para salvar, buscar e invalidar refresh tokens.
+
+| `UserRepository`
+| Interface para buscar usuários com base no email.
+
+| `UserDetailsServiceImpl`
+| Implementação de `UserDetailsService`, usada pelo Spring Security para autenticação.
+
+| `SecurityConfig`
+| Classe de configuração do Spring Security: filtros, paths públicos, CORS, CSRF, etc.
+
+| `JwtAuthFilter`
+| Filtro que intercepta requests e autentica usuários com base no access token.
+
+| `GlobalExceptionHandler`
+| Captura exceções e retorna respostas padronizadas com i18n, códigos internos e metadados.
+
+| `BruteForceProtectionService`
+| Service para limitar tentativas de login (pode usar bucket/token algorithm + cache).
+
+| `AuthLogger`
+| Serviço para log estruturado (login, logout, falhas), integrável com observabilidade.
+
+| `AuthMetricsCollector`
+| Emissão de métricas via Micrometer: número de logins, falhas, renovações, logouts.
+
+| `RedisBlocklistService` _(opcional)_
+| Caso o projeto ative Redis, gerencia cache de tokens bloqueados (refresh ou access comprometidos).
+|===
+
+Fluxo típico:
+- Controller → UseCase → TokenService + Repositórios
+- Security → JwtAuthFilter → TokenService → Spring Context
+- Falhas → GlobalExceptionHandler → resposta amigável
+
+=== Gerenciamento de Tokens
+
+==== Access Token (JWT)
+- Duração: 15 minutos
+- Transportado via: `Authorization: Bearer <access_token>`
+- Conteúdo (claims):
+- `sub`: ID do usuário
+- `email`: email do usuário
+- `iat`: data de emissão
+- `exp`: data de expiração
+- `roles`: (opcional) perfis ou permissões
+
+- Assinatura: algoritmo HS256, com chave simétrica configurada via variável de ambiente
+
+==== Refresh Token
+- Duração: 7 dias
+- Gerado como string UUID v4 (não JWT)
+- Armazenado em banco (PostgreSQL), com metadata:
+- user_id
+- token_hash (hash seguro, nunca em texto puro)
+- issued_at
+- expires_at
+- ip_address
+- user_agent
+- revoked (booleano)
+- Tabela recomendada: `refresh_tokens`
+
+==== Estratégia de Revogação
+- **Logout:** marca o token como `revoked` no banco
+- **Renovação:** invalida o refresh token antigo (rotaciona), gera novo access e refresh
+- **Comprometimento:** pode usar Redis opcionalmente como **blocklist cache** com TTL
+- Chave: jti ou hash do token
+- TTL = expiração do token
+
+==== Segurança
+- Nenhum token é armazenado no lado servidor da sessão
+- Refresh token expira automaticamente e é invalidado via flag ou delete
+- Access token nunca é persistido
+- O uso de Redis (quando ativado) melhora performance para negação de tokens revogados
+- IP/User-Agent tracking ajuda a detectar anomalias por device
+
+=== Segurança Avançada
+
+==== CORS
+- Configurado em `SecurityConfig` via `CorsConfigurationSource`
+- Origens permitidas: `https://app.frontend.com` (ajustável por env var)
+- Métodos: `GET`, `POST`, `PUT`, `DELETE`
+- Cabeçalhos: `Authorization`, `Content-Type`
+- Expiração do preflight: `3600s`
+
+==== CSRF
+- Desabilitado (`csrf().disable()`), pois usamos autenticação via tokens (stateless)
+- A proteção contra CSRF é delegada à arquitetura do token e ao domínio separado da SPA
+
+==== Rate Limiting
+- Implementação via filtro customizado ou biblioteca (ex: Bucket4j)
+- Estratégia:
+- Endpoint: `/auth/login`
+- Limite: 5 tentativas por IP por minuto
+- Resposta: 429 Too Many Requests com Retry-After
+
+==== Brute-Force Protection
+- Componente: `BruteForceProtectionService`
+- Cache (Redis ou memória local) registra tentativas falhas por IP + email
+- A cada falha:
+- Incrementa contador
+- Se ultrapassar limiar, bloqueia temporariamente
+- Pode gerar alerta automático no `AuthMetricsCollector`
+
+==== Headers de Segurança (via Spring Security HeadersConfigurer)
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `Strict-Transport-Security`: se HTTPS está ativo
+- `Cache-Control: no-store` em endpoints sensíveis
+
+==== Considerações de SPA
+- Tokens são armazenados no SPA em memória ou secure http-only cookies
+- Nunca armazenar JWTs em `localStorage` ou `sessionStorage`
+
+=== Insights para Robustez
+
+==== Monitoramento e Métricas
+- Uso de `Micrometer` com integração via Prometheus + Grafana
+- Métricas recomendadas:
+- `auth.login.success.count`
+- `auth.login.failed.count`
+- `auth.refresh.success.count`
+- `auth.refresh.failed.count`
+- `auth.logout.count`
+- `auth.rate_limited.count`
+- Cada métrica pode ter labels como `user_id`, `origin`, `device_type`
+
+==== Logs Estruturados
+- Logs em formato JSON usando `Logback` + appender custom
+- Logar:
+- Tentativas de login (usuário, IP, sucesso/falha, user-agent)
+- Uso de refresh token (device, IP)
+- Revogações (logout, token comprometido)
+- Identificadores únicos por request (correlation-id)
+
+==== Alertas
+- Definições de alerta:
+- >10 falhas de login por IP por minuto
+- Uso repetido de refresh token revogado
+- Pico anormal de renovações de token
+- Envio via email, Slack, ou sistemas externos (Alertmanager, Datadog)
+
+==== Testes Recomendados
+- **Unitários** (usando JUnit 5 e Mockito)
+- TokenService
+- UseCases (Authenticate, Refresh, Logout)
+- Regras de negócio do domínio
+
+- **Integração (SpringBootTest + Testcontainers)**
+- Integração com PostgreSQL
+- Verificação do fluxo completo (login → refresh → logout)
+- Testes de segurança: token inválido, expirado, revoked
+
+- **Carga e Stress**
+- Locust, JMeter ou k6 para simular picos de login
+- Acompanhar taxa de falhas e latência nos endpoints
+
+==== Resiliência
+- **Timeouts definidos** para chamadas externas (ex: Redis, DB)
+- **Retries** limitados onde necessário (via Spring Retry)
+- **Fallbacks seguros** (tokens inválidos geram falha controlada, não erro 500)
+
+== Implementation
+
+=== 1. Estrutura do Projeto
+- Criar projeto Spring Boot 3.5 (Java 17+), com dependências:
+- Spring Web, Spring Security, Spring Data JPA, PostgreSQL Driver
+- Spring Boot Actuator, Micrometer
+- Validation, Lombok
+- (Opcional: Redis Starter, Spring Retry)
+
+- Criar a estrutura de pacotes conforme especificado:
+- `domain`, `application`, `infrastructure`, `interfaces.web`, `config`
+
+=== 2. Segurança (SecurityConfig)
+- Configurar `SecurityFilterChain`:
+- Desabilitar CSRF
+- Permitir endpoints públicos: `/auth/login`, `/auth/refresh`, `/auth/logout`
+- Registrar filtro `JwtAuthFilter` antes do filtro de autenticação padrão
+- Configurar CORS com origens externas
+
+=== 3. Autenticação
+- Implementar `UserDetailsServiceImpl` + `PasswordEncoder`
+- Criar `AuthController` com endpoints:
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+
+- Criar os DTOs: `LoginRequest`, `TokenResponse`, `RefreshRequest`, etc.
+
+- Implementar casos de uso:
+- `AuthenticateUser`
+- `RefreshAccessToken`
+- `LogoutService`
+
+- Criar e configurar `JwtTokenProvider` (gera e valida access token)
+
+=== 4. Gerenciamento de Tokens
+- Criar entidade `RefreshToken` com campos necessários
+- Criar `RefreshTokenRepository` com interface JPA
+- Implementar serviço para emitir, validar e revogar refresh tokens
+
+- Opcional: `RedisBlocklistService` com TTL baseado no `exp` do token
+
+=== 5. Proteções Adicionais
+- Criar `BruteForceProtectionService` com cache em memória ou Redis
+- Aplicar em `AuthenticateUser` antes de validar senha
+
+- Criar `RateLimitFilter` para limitar chamadas em `/auth/login`
+- Criar `GlobalExceptionHandler` com suporte a mensagens i18n
+
+=== 6. Observabilidade
+- Configurar logs estruturados via `AuthLogger`
+- Emitir métricas com `AuthMetricsCollector` usando Micrometer
+- Integrar com Actuator e endpoint `/actuator/metrics`
+
+=== 7. Testes
+- Escrever testes unitários para casos de uso e serviços
+- Criar testes de integração com banco real (Testcontainers)
+- Simular cenário completo: login → renovação → logout
+
+=== 8. Preparação para Produção
+- Definir variáveis de ambiente (JWT secret, tempo de expiração, CORS)
+- Definir política de rotação do JWT secret
+- Configurar headers de segurança e cache-control
+
+== Milestones
+
+[cols="1,3"]
+|===
+| Fase | Entregas
+
+| M1 – Setup do Projeto
+|
+- Estrutura de pacotes conforme Clean Architecture
+- Configuração básica do Spring Boot, Security e CORS
+- Configuração do PostgreSQL (ou Testcontainers para dev)
+
+| M2 – Fluxo de Autenticação Básica
+|
+- Endpoint `/auth/login` funcionando
+- Geração de access e refresh tokens
+- Armazenamento do refresh token no banco
+- Validação básica de tokens
+
+| M3 – Fluxo de Renovação e Logout
+|
+- Endpoint `/auth/refresh` com rotação de refresh token
+- Endpoint `/auth/logout` com revogação do token no banco
+- DTOs, validações, e mensagens de erro consistentes
+
+| M4 – Segurança Avançada
+|
+- JwtAuthFilter funcional
+- Brute-force protection com cache simples
+- Rate limiting por IP no login
+- Headers de segurança aplicados
+
+| M5 – Observabilidade
+|
+- Métricas de login, falhas, renovações
+- Logs estruturados de tentativas e anomalias
+- Endpoint de healthcheck e métricas via Actuator
+
+| M6 – Internacionalização e Custom Errors
+|
+- Mensagens i18n configuradas (pt-BR + fallback en)
+- `GlobalExceptionHandler` aplicado em toda API
+
+| M7 – Extensões (Opcional)
+|
+- Redis para blocklist de tokens
+- Testes de carga com k6 ou Locust
+- Plano para futura integração com OIDC
+
+|===
+
+== Gathering Results
+
+=== Avaliação de Requisitos
+
+Após a implantação do MVP, os seguintes critérios devem ser usados para verificar se os requisitos foram plenamente atendidos:
+
+- **Fluxo de Autenticação**
+- Autenticação via login funciona com tokens emitidos corretamente
+- Renovação de tokens válida o refresh token e gera novo access token
+- Logout revoga corretamente o refresh token
+
+- **Segurança**
+- Access tokens expirados não são aceitos
+- Refresh tokens revogados não podem ser reutilizados
+- Proteções contra brute-force e rate limiting ativas
+
+- **Mensagens de Erro**
+- Respostas padronizadas, localizadas e compreensíveis
+- Códigos internos identificáveis no log
+
+- **Arquitetura e Qualidade**
+- Testes automatizados cobrindo fluxos principais (>80% de cobertura)
+- Camadas bem separadas e testáveis isoladamente
+- Adesão aos princípios SOLID e Clean Architecture
+
+=== Monitoramento em Produção
+
+- Métricas expostas via `/actuator/metrics` e coletadas por Prometheus
+- Dashboards de login/logout/falhas em Grafana
+- Logs estruturados visíveis via Elasticsearch ou Kibana
+- Alertas automáticos configurados para padrões anômalos
+
+=== Feedback do Frontend
+
+- SPA deve conseguir renovar tokens sem redirecionamento
+- Mensagens de erro exibidas ao usuário final de forma amigável
+- Integração entre backend e frontend validada em navegadores e dispositivos variados
+
+=== Indicadores de Sucesso
+
+- Taxa de autenticação com sucesso > 95%
+- Nenhum token inválido aceito após expiração ou revogação
+- Número de falhas de autenticação anômalas detectadas e mitigadas
+- Nenhum incidente de segurança registrado no ambiente #MVP#####
