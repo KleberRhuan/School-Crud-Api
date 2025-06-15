@@ -47,3 +47,17 @@ Thumbs.db
 
 # Others
 **/*.class
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+certificates/
+secrets/
+
+# Temporary files
+diff.txt
+status.txt
+code.zip
