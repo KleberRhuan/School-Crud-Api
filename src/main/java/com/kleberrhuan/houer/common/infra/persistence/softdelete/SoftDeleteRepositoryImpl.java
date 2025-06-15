@@ -1,8 +1,9 @@
-/* (C)2025 Ludilens */
-package com.ludilens.esdrasresearch.common.infra.persistence;
+/* (C)2025 Kleber Rhuan */
+package com.kleberrhuan.houer.common.infra.persistence.softdelete;
 
-import com.ludilens.esdrasresearch.common.domain.exception.EntityNotFoundException;
-import com.ludilens.esdrasresearch.common.domain.repository.SoftDeleteRepository;
+import com.kleberrhuan.houer.common.domain.exception.EntityNotFoundException;
+import com.kleberrhuan.houer.common.domain.repository.SoftDeleteRepository;
+import com.kleberrhuan.houer.common.infra.persistence.SoftDeletableAuditable;
 import jakarta.persistence.EntityManager;
 import java.io.Serializable;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;

@@ -1,7 +1,9 @@
-/* (C)2025 Ludilens */
-package com.ludilens.esdrasresearch.common.infra.persistence;
+/* (C)2025 Kleber Rhuan */
+package com.kleberrhuan.houer.common.infra.persistence.softdelete;
 
+import com.kleberrhuan.houer.common.infra.persistence.SoftDeletableAuditable;
 import jakarta.persistence.EntityManager;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
 import org.springframework.data.jpa.repository.support.JpaRepositoryImplementation;
@@ -14,11 +16,11 @@ public class SoftDeleteRepositoryFactory extends JpaRepositoryFactory {
     super(em);
   }
 
+  @NotNull
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   protected JpaRepositoryImplementation<?, ?> getTargetRepository(
     RepositoryInformation information,
-    EntityManager em
+    @NotNull EntityManager em
   ) {
     Class<?> domain = information.getDomainType();
     JpaEntityInformation entityInfo = getEntityInformation(domain);
@@ -29,6 +31,7 @@ public class SoftDeleteRepositoryFactory extends JpaRepositoryFactory {
     return super.getTargetRepository(information, em);
   }
 
+  @NotNull
   @Override
   protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
     if (

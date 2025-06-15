@@ -1,5 +1,5 @@
-/* (C)2025 Ludilens */
-package com.ludilens.esdrasresearch.common.infra.persistence;
+/* (C)2025 Kleber Rhuan */
+package com.kleberrhuan.houer.common.infra.persistence.softdelete;
 
 import jakarta.persistence.EntityManager;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactoryBean;
