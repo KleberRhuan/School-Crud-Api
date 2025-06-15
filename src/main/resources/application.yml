@@ -67,8 +67,11 @@ spring:
         query:
           plan_cache_max_size: 2048
           in_clause_parameter_padding: true
+  
+  docker:
+    compose:
+      enabled: false
 
-# Configura��es do SpringDoc OpenAPI
 springdoc:
   api-docs:
     path: /api-docs
@@ -91,6 +94,8 @@ springdoc:
   show-actuator: false
   writer-with-default-pretty-printer: true
 
+
+
 # Configura��o de propriedade para habilitar/desabilitar a documenta��o
 api:
   swagger:
@@ -98,17 +103,21 @@ api:
 
 # Configura��es de seguran�a
 jwt:
-  public-key: ${JWT_PUBLIC_KEY:classpath:certificates/public.pub}
-  private-key: ${JWT_PRIVATE_KEY:classpath:certificates/private.pem}
-  expiration-in-seconds: ${JWT_EXPIRATION:900}
-  issuer: ${JWT_ISSUER:Houer Application}
+  publicKey: ${JWT_PUBLIC_KEY:classpath:certificates/public.pub}
+  privateKey: ${JWT_PRIVATE_KEY:classpath:certificates/private.pem}
+  access-ttl-sec: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
+  refresh-ttl-sec: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}
+  issuer: ${JWT_ISSUER:Houer}
 
 auth:
   reset:
     code-length: 6
     ttl-in-seconds: ${AUTH_RESET_EXPIRATION:900}
+  cache:
+    provider: caffeine
 
 app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
   notification:
     provider:
       email: brevo
@@ -129,22 +138,17 @@ app:
   
   # Configura��es da aplica��o
   houer:
-      url: ${HOUER_RESEARCH_URL:http://localhost:8080}
-      caches:
-        outbox-message:
-          ttl: 
-        jwt-blacklist:
-          ttl: 15m
-          max-size: 1_000
-        rate-minute:
-          ttl: 1m
-          max-size: 10_000
-        rate-auth:
-          ttl: 1m
-          max-size: 5_000
-        default:
-          ttl: 30m
-          max-size: 1_000
+    url: ${HOUER_RESEARCH_URL:http://localhost:8080}
+    caches:
+      default:
+        ttl: 30m
+        maxSize: 1000
+      rate-limit:
+        ttl: 1m
+        maxSize: 20000
+      jwt-blacklist:
+        ttl: 15m
+        maxSize: 20000
   
   # Configura��es de Rate Limiting
   rate-limit:
@@ -239,4 +243,3 @@ resilience4j:
         failure-rate-threshold: 50
         sliding-window-size: 20
         wait-duration-in-open-state: 30s
-

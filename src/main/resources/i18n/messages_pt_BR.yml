@@ -1,30 +1,94 @@
 error:
+
   business:
-    forbidden:
+    security:
+      forbidden:
+        detail: "Acesso negado."
+        message: "Usuário sem permissão para executar esta operação."
+      unauthenticated: 
+        detail: "Acesso negado."
+        message: "Usuário não autenticado."
     
     entity:
       alreadyDeleted:
+        detail: "Recurso ja excluido."
+        message: "O {0} com o id {1} ja foi excluido."
       notFound:
+        detail: "{0} não encontrado."
+        message: "Não encontramos a entidade {0} com o id {1}."
         
     constraint:
       check:
+        detail: "Violação de regra de negócio."
+        message: "O valor informado viola a regra {0}."
       exclusion:
+        detail: "Violação de exclusão."
+        message: "O valor informado conflita com {0}."
       unique:
+        detail: "Valor duplicado."
+        message: "O valor ''{1}'' informado para o campo {0} já existe."
       fk:
+        detail: "Violação de integridade referencial."
+        message: "O valor informado em {0} não existe no recurso referenciado."
       notNull:
-      
-  infrastructure:
+        detail: "Campo obrigatório."
+        message: "O campo {0} é obrigatório."
     
+    invalidFilterParamValue:
+      detail: "O parâmetro de filtro '{0}' possui um valor inválido."
+      message: "O valor informado para o parâmetro de filtro '{0}' é inválido ou o tipo nao corresponde ao parâmetro de filtro.(Boolean, Inteiro, String)"
+    
+  infrastructure:
+  
     rate-limit:
       exceeded:
+        detail: "Limite de requisições excedido."
+        message: "Você excedeu o número de requisições permitido. Tente novamente em breve."
         
     default:
+      detail: "Ocorreu um erro."
+      message: "Ocorreu um erro interno no servidor, tente novamente e se o problema persistir, entre em contato com o administrador."
       
     notification:
       outbox:
         persistence:
+          detail: "Falha ao persistir mensagem na outbox."
+          message: "Não foi possível salvar a mensagem para reenvio."
         notFound":
+          detail: "Mensagem da outbox não encontrada."
+          message: "Não foi possível localizar a mensagem da outbox."
       provider:
         notFound:
+          detail: "Provedor de notificações não encontrado."
+          message: "Nenhum provedor de notificações configurado para o canal '{0}'."
       email:
         delivery:
+          detail: "Erro de envio de e-mail."
+          message: "Falha ao enviar e-mail para '{0}'. Tente novamente mais tarde."
+  
+  auth:
+    verification:
+      expired:
+        detail: "Código de verificação expirado."
+        message: "O código de verificação expirou. Solicite um novo."
+      invalid:
+        detail: "Código de verificação inválido."
+        message: "O código de verificação fornecido é inválido ou já foi usado."
+    account:
+      not-verified:
+        detail: "Conta não verificada."
+        message: "Sua conta ainda não foi verificada. Confira seu e-mail."
+    token:
+      malformed:
+        detail: "Token inválido."
+        message: "O token fornecido é inválido ou malformado."
+    refresh:
+      expired:
+        detail: "Token de atualização expirado."
+        message: "Seu token de atualização expirou. Faça login novamente."
+      not-found:
+        detail: "Token de atualização não encontrado."
+        message: "Não encontramos seu token de atualização."
+    bad-credentials:
+      detail: "Credenciais inválidas."
+      message: "E-mail ou senha incorretos. Verifique e tente novamente."

@@ -31,3 +31,19 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Maven / Gradle
+out/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Others
+**/*.class
