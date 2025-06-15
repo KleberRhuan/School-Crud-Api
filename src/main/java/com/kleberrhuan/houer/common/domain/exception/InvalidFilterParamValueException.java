@@ -1,8 +1,8 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.common.domain.exception;
 
-import com.ludilens.esdrasresearch.common.interfaces.dto.error.ApiErrorType;
-import com.ludilens.esdrasresearch.common.interfaces.dto.error.MessageKey;
+import com.kleberrhuan.houer.common.interfaces.dto.error.ApiErrorType;
+import com.kleberrhuan.houer.common.interfaces.dto.error.MessageKey;
 import org.springframework.http.HttpStatus;
 
 public class InvalidFilterParamValueException extends BusinessException {
@@ -11,7 +11,7 @@ public class InvalidFilterParamValueException extends BusinessException {
     super(
       HttpStatus.BAD_REQUEST,
       ApiErrorType.INVALID_FILTER_PARAM_VALUE,
-      MessageKey.of("error.invalid_filter_param_value"),
+      MessageKey.of("error.business.invalidFilterParamValue"),
       value
     );
   }

@@ -11,7 +11,7 @@ public class ForbiddenException extends BusinessException {
     super(
       HttpStatus.FORBIDDEN,
       ApiErrorType.FORBIDDEN,
-      MessageKey.of("error.business.forbidden")
+      MessageKey.of("error.business.security.forbidden")
     );
   }
 }

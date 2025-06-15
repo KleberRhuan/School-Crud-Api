@@ -24,6 +24,21 @@ public enum ApiErrorType {
   INSUFFICIENT_SCOPE("/errors/insufficient-scope", "Escopo insuficiente"),
   INVALID_CREDENTIALS("/errors/invalid-credentials", "Credenciais inválidas"),
   BAD_CREDENTIALS("/errors/bad-credentials", "Credenciais inválidas"),
+  ACCOUNT_NOT_VERIFIED("/errors/account-not-verified", "Conta não verificada"),
+  REFRESH_NOT_FOUND(
+    "/errors/refresh-not-found",
+    "Refresh-token nao encontrado"
+  ),
+  REFRESH_EXPIRED("/errors/refresh-expired", "Refresh-token expirado"),
+  TOKEN_MALFORMED("/errors/malformed-token", "Token JWT mal-formado"),
+  VERIFICATION_INVALID(
+    "/errors/verification-invalid",
+    "Token de verificação inválido"
+  ),
+  VERIFICATION_EXPIRED(
+    "/errors/verification-expired",
+    "Token de verificação expirado"
+  ),
 
   // Erros relacionados a contas
   ACCOUNT_LOCKED("/errors/account-locked", "Conta bloqueada"),

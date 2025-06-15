@@ -7,27 +7,29 @@ import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.EmailReci
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.EmailSender;
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.SendSmtpEmail;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Context;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-@RequiredArgsConstructor
-public class BrevoMapper {
+@Mapper(
+  componentModel = "spring",
+  imports = { List.class, EmailRecipient.class }
+)
+public interface BrevoMapper {
+  @Mapping(target = "sender", expression = "java(buildSender(props))")
+  @Mapping(
+    target = "to",
+    expression = "java(List.of(new EmailRecipient(null, n.to())))"
+  )
+  @Mapping(target = "subject", source = "n.subject")
+  @Mapping(target = "htmlContent", source = "n.message")
+  SendSmtpEmail toBrevo(NotificationModel n, @Context BrevoProps props);
 
-  private final BrevoProps props;
-  private final EmailSender sender = EmailSender
-    .builder()
-    .name(props.name())
-    .email(props.email())
-    .build();
-
-  public SendSmtpEmail toBrevo(NotificationModel n) {
-    return SendSmtpEmail
+  default EmailSender buildSender(@Context BrevoProps props) {
+    return EmailSender
       .builder()
-      .sender(sender)
-      .to(List.of(new EmailRecipient(null, n.to())))
-      .subject(n.subject())
-      .htmlContent(n.message())
+      .email(props.email())
+      .name(props.name())
       .build();
   }
 }

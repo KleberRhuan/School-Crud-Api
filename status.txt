@@ -1,0 +1,212 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   .env
+	new file:   .env.example
+	new file:   Dockerfile
+	new file:   docs/auth/Full-Arch.adoc
+	new file:   docs/auth/Improvements.adoc
+	new file:   docs/auth/parts/01.adoc
+	new file:   docs/auth/parts/02.adoc
+	new file:   docs/auth/parts/03.adoc
+	new file:   docs/auth/parts/04.adoc
+	new file:   docs/auth/parts/05.adoc
+	new file:   docs/auth/parts/06.adoc
+	new file:   docs/auth/parts/07.adoc
+	new file:   docs/auth/parts/08.adoc
+	new file:   docs/auth/parts/09.adoc
+	new file:   scripts/generate-certificates.sh
+	new file:   src/main/java/com/kleberrhuan/houer/auth/application/listener/VerificationMailListener.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/application/port/jwt/TokenBlockList.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/application/service/AuthenticationService.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/application/service/RegistrationService.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/event/UserRegisteredEvent.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/exception/AuthException.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/model/RefreshToken.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/model/Role.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/model/UserPrincipal.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/model/VerificationToken.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/repository/RefreshTokenRepository.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/domain/repository/VerificationTokenRepository.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/config/CaffeineBlockListConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/error/ApiErrorAccessDeniedHandler.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/error/ApiErrorAuthenticationEntryPoint.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/jobs/RefreshCleanupJob.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/observability/PostValidationFilter.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/properties/JwtProps.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/CorsConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/JwtConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/PasswordEncoderConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/SecurityConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/JwtParser.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/JwtToAuthConverter.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/JwtTokenProvider.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/TokenBlockListImpl.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/TokenPair.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/interfaces/dto/request/LoginRequest.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/interfaces/dto/request/RefreshRequest.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/interfaces/dto/request/RegisterRequest.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/interfaces/dto/response/TokenResponse.java
+	new file:   src/main/java/com/kleberrhuan/houer/auth/interfaces/web/AuthController.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/application/dispatcher/notification/NotificationDispatcher.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/application/port/dispatcher/DispatcherService.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/application/port/notification/OutboxProcessor.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/application/port/ratelimit/RateLimiter.java
+	renamed:    src/main/java/com/kleberrhuan/houer/common/application/service/BrevoEmailSender.java -> src/main/java/com/kleberrhuan/houer/common/application/service/notification/BrevoEmailSender.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/application/service/notification/EmailOutboxProcessor.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/application/service/notification/MailTemplateService.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/application/service/notification/OutboxProcessingService.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/domain/repository/SoftDeleteRepository.java
+	renamed:    src/main/java/com/kleberrhuan/houer/common/infra/config/CacheConfig.java -> src/main/java/com/kleberrhuan/houer/common/infra/config/CaffeineCacheConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/config/OpenApiConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/config/PasswordConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/config/RateLimitConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/config/ThymeleafMailConfig.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/outbox/job/OutboxRetryJob.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/Auditable.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/CustomHibernateJpaDialect.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/SoftDeletableAuditable.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/converter/LowerCaseConverter.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/softdelete/SoftDeleteRepositoryFactory.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/softdelete/SoftDeleteRepositoryFactoryBean.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/softdelete/SoftDeleteRepositoryImpl.java
+	deleted:    src/main/java/com/kleberrhuan/houer/common/infra/properties/CacheSpecsProperties.java
+	renamed:    src/main/java/com/kleberrhuan/houer/common/infra/properties/PasswordValidation.java -> src/main/java/com/kleberrhuan/houer/common/infra/properties/PasswordValidationProperties.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/properties/Spec.java
+	deleted:    src/main/java/com/kleberrhuan/houer/common/infra/ratelimit/LimitGroup.java
+	deleted:    src/main/java/com/kleberrhuan/houer/common/infra/ratelimit/LimitRule.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/ratelimit/RateCheck.java
+	deleted:    src/main/java/com/kleberrhuan/houer/common/infra/ratelimit/RateLimiter.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/validation/annotation/ValidPassword.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/validation/validator/PasswordValidator.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/validation/validator/factory/PasswordRulesFactory.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/infra/web/advice/GlobalExceptionHandler.java
+	new file:   src/main/java/com/kleberrhuan/houer/common/interfaces/documentation/schemas/ErrorResponseSchema.java
+	new file:   src/main/java/com/kleberrhuan/houer/user/application/mapper/UserMapper.java
+	new file:   src/main/java/com/kleberrhuan/houer/user/domain/model/User.java
+	new file:   src/main/java/com/kleberrhuan/houer/user/domain/repository/UserRepository.java
+	new file:   src/main/java/com/kleberrhuan/houer/user/interfaces/dto/response/UserResponse.java
+	new file:   src/main/resources/db/migration/V1__init.sql
+	new file:   src/main/resources/db/migration/V2__audit_event_and_outbox.sql
+	new file:   src/main/resources/db/migration/V3__create_refresh_tokens.sql
+	new file:   src/main/resources/templates.email/verify-account.html
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .env
+	modified:   .gitignore
+	modified:   Dockerfile
+	modified:   compose.yaml
+	modified:   docs/auth/Full-Arch.adoc
+	modified:   docs/auth/Improvements.adoc
+	modified:   pom.xml
+	modified:   scripts/generate-certificates.sh
+	modified:   src/main/java/com/kleberrhuan/houer/HouerApplication.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/application/listener/VerificationMailListener.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/application/port/jwt/TokenBlockList.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/application/service/AuthenticationService.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/application/service/RegistrationService.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/event/UserRegisteredEvent.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/exception/AuthException.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/model/RefreshToken.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/model/Role.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/model/UserPrincipal.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/model/VerificationToken.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/repository/RefreshTokenRepository.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/domain/repository/VerificationTokenRepository.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/config/CaffeineBlockListConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/error/ApiErrorAccessDeniedHandler.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/error/ApiErrorAuthenticationEntryPoint.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/jobs/RefreshCleanupJob.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/observability/PostValidationFilter.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/properties/JwtProps.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/CorsConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/JwtConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/PasswordEncoderConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/config/SecurityConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/JwtParser.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/JwtToAuthConverter.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/JwtTokenProvider.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/TokenBlockListImpl.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/infra/security/jwt/TokenPair.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/interfaces/dto/request/LoginRequest.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/interfaces/dto/request/RegisterRequest.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/interfaces/dto/response/TokenResponse.java
+	modified:   src/main/java/com/kleberrhuan/houer/auth/interfaces/web/AuthController.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/dispatcher/notification/NotificationDispatcher.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/mapper/BrevoMapper.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/port/dispatcher/DispatcherService.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/port/notification/OutboxProcessor.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/port/notification/OutboxStore.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/port/ratelimit/RateLimiter.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/service/notification/BrevoEmailSender.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/service/notification/EmailOutboxProcessor.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/service/notification/MailTemplateService.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/application/service/notification/OutboxProcessingService.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/domain/exception/ForbiddenException.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/domain/exception/InvalidFilterParamValueException.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/domain/repository/SoftDeleteRepository.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/aspect/ExceptionLoggingAspect.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/aspect/ProfilingAspect.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/config/CacheFactory.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/config/CaffeineCacheConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/config/JpaConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/config/OpenApiConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/config/PasswordConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/config/RateLimitConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/config/ThymeleafMailConfig.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/exception/ApiException.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/outbox/InMemoryOutboxStore.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/outbox/JpaOutboxStore.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/outbox/OutboxExpiryPolicy.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/outbox/ResilientOutboxStore.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/outbox/job/OutboxRetryJob.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/Auditable.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/CustomHibernateJpaDialect.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/SoftDeletableAuditable.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/converter/LowerCaseConverter.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/softdelete/SoftDeleteRepositoryFactory.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/softdelete/SoftDeleteRepositoryFactoryBean.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/persistence/softdelete/SoftDeleteRepositoryImpl.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/properties/HouerProperties.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/properties/ProviderProps.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/properties/Spec.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/ratelimit/RateCheck.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/ratelimit/web/filter/RateLimitFilter.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/validation/annotation/ValidPassword.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/validation/validator/PasswordValidator.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/validation/validator/factory/PasswordRulesFactory.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/infra/web/advice/GlobalExceptionHandler.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/interfaces/documentation/schemas/ErrorResponseSchema.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/interfaces/dto/error/ApiErrorResponse.java
+	modified:   src/main/java/com/kleberrhuan/houer/common/interfaces/dto/error/ApiErrorType.java
+	modified:   src/main/java/com/kleberrhuan/houer/user/application/mapper/UserMapper.java
+	modified:   src/main/java/com/kleberrhuan/houer/user/domain/model/User.java
+	modified:   src/main/java/com/kleberrhuan/houer/user/domain/repository/UserRepository.java
+	modified:   src/main/java/com/kleberrhuan/houer/user/interfaces/dto/response/UserResponse.java
+	modified:   src/main/resources/application.yml
+	modified:   src/main/resources/db/migration/V1__init.sql
+	modified:   src/main/resources/db/migration/V2__audit_event_and_outbox.sql
+	modified:   src/main/resources/db/migration/V3__create_refresh_tokens.sql
+	modified:   src/main/resources/i18n/messages_pt_BR.yml
+	modified:   src/main/resources/logback-spring.xml
+	modified:   src/main/resources/messages.properties
+	modified:   src/main/resources/templates.email/verify-account.html
+	modified:   src/test/java/com/kleberrhuan/houer/HouerApplicationTests.java
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	code.zip
+	diff.txt
+	docs/auth/html/
+	src/main/java/com/kleberrhuan/houer/common/interfaces/documentation/controllers/
+	src/main/java/com/kleberrhuan/houer/common/interfaces/documentation/schemas/LoginRequestSchema.java
+	src/main/java/com/kleberrhuan/houer/common/interfaces/documentation/schemas/RegisterRequestSchema.java
+	src/main/java/com/kleberrhuan/houer/common/interfaces/documentation/schemas/TokenResponseSchema.java
+	src/main/resources/certificates/
+	src/test/java/com/kleberrhuan/houer/common/
+	status.txt
+
