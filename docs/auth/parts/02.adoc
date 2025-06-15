@@ -1,0 +1,39 @@
+=== Organização de Módulos e Pacotes
+
+A arquitetura seguirá a abordagem inspirada na Clean/Hexagonal Architecture, com divisão clara entre camadas de domínio, aplicação, infraestrutura e configuração.
+
+Estrutura de pacotes:
+
+[source,text]
+----
+com.exemplo.auth
+├── config                  # Beans, SecurityConfig, CORS, etc.
+├── domain
+│   ├── model              # Entidades: User, RefreshToken
+│   ├── repository         # Interfaces de persistência (ex: UserRepository)
+│   └── service            # Regras de negócio puras (ex: AuthDomainService)
+├── application
+│   ├── dto                # LoginRequest, TokenResponse, etc.
+│   ├── usecase            # Casos de uso (ex: AuthenticateUser, IssueTokens)
+│   └── exception          # Erros e códigos de falha (ex: InvalidCredentialsException)
+├── infrastructure
+│   ├── persistence        # Implementações JPA de repositórios
+│   ├── security           # JwtTokenProvider, filtros, handlers do Spring Security
+│   └── monitoring         # Métricas, logging estruturado, alertas
+├── interfaces
+│   └── web
+│       └── controller     # REST Controllers (ex: AuthController)
+└── AuthApplication.java   # Classe principal
+----
+
+Notas:
+- `domain`: independente de frameworks. Apenas regras de negócio puras.
+- `application`: orquestra os casos de uso. Chama domínio e infraestrutura.
+- `infrastructure`: dependente de frameworks (Spring, JPA, Redis, Micrometer).
+- `interfaces.web`: entrada HTTP via REST Controllers.
+- `config`: configuração de beans, segurança, CORS, CSRF, rate limiter, etc.
+
+Vantagens:
+- Alta testabilidade (domínio e aplicação independentes de Spring)
+- Evolução facilitada (ex: integração com OIDC futura afeta só a camada de infraestrutura)
+- Responsabilidades claras para novos desenvolvedores

@@ -1,0 +1,40 @@
+=== Gerenciamento de Tokens
+
+==== Access Token (JWT)
+- Duração: 15 minutos
+- Transportado via: `Authorization: Bearer <access_token>`
+- Conteúdo (claims):
+- `sub`: ID do usuário
+- `email`: email do usuário
+- `iat`: data de emissão
+- `exp`: data de expiração
+- `roles`: (opcional) perfis ou permissões
+
+- Assinatura: algoritmo HS256, com chave simétrica configurada via variável de ambiente
+
+==== Refresh Token
+- Duração: 7 dias
+- Gerado como string UUID v4 (não JWT)
+- Armazenado em banco (PostgreSQL), com metadata:
+- user_id
+- token_hash (hash seguro, nunca em texto puro)
+- issued_at
+- expires_at
+- ip_address
+- user_agent
+- revoked (booleano)
+- Tabela recomendada: `refresh_tokens`
+
+==== Estratégia de Revogação
+- **Logout:** marca o token como `revoked` no banco
+- **Renovação:** invalida o refresh token antigo (rotaciona), gera novo access e refresh
+- **Comprometimento:** pode usar Redis opcionalmente como **blocklist cache** com TTL
+- Chave: jti ou hash do token
+- TTL = expiração do token
+
+==== Segurança
+- Nenhum token é armazenado no lado servidor da sessão
+- Refresh token expira automaticamente e é invalidado via flag ou delete
+- Access token nunca é persistido
+- O uso de Redis (quando ativado) melhora performance para negação de tokens revogados
+- IP/User-Agent tracking ajuda a detectar anomalias por device

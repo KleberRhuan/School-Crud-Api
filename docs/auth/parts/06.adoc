@@ -1,0 +1,47 @@
+=== Insights para Robustez
+
+==== Monitoramento e Métricas
+- Uso de `Micrometer` com integração via Prometheus + Grafana
+- Métricas recomendadas:
+- `auth.login.success.count`
+- `auth.login.failed.count`
+- `auth.refresh.success.count`
+- `auth.refresh.failed.count`
+- `auth.logout.count`
+- `auth.rate_limited.count`
+- Cada métrica pode ter labels como `user_id`, `origin`, `device_type`
+
+==== Logs Estruturados
+- Logs em formato JSON usando `Logback` + appender custom
+- Logar:
+- Tentativas de login (usuário, IP, sucesso/falha, user-agent)
+- Uso de refresh token (device, IP)
+- Revogações (logout, token comprometido)
+- Identificadores únicos por request (correlation-id)
+
+==== Alertas
+- Definições de alerta:
+- >10 falhas de login por IP por minuto
+- Uso repetido de refresh token revogado
+- Pico anormal de renovações de token
+- Envio via email, Slack, ou sistemas externos (Alertmanager, Datadog)
+
+==== Testes Recomendados
+- **Unitários** (usando JUnit 5 e Mockito)
+- TokenService
+- UseCases (Authenticate, Refresh, Logout)
+- Regras de negócio do domínio
+
+- **Integração (SpringBootTest + Testcontainers)**
+- Integração com PostgreSQL
+- Verificação do fluxo completo (login → refresh → logout)
+- Testes de segurança: token inválido, expirado, revoked
+
+- **Carga e Stress**
+- Locust, JMeter ou k6 para simular picos de login
+- Acompanhar taxa de falhas e latência nos endpoints
+
+==== Resiliência
+- **Timeouts definidos** para chamadas externas (ex: Redis, DB)
+- **Retries** limitados onde necessário (via Spring Retry)
+- **Fallbacks seguros** (tokens inválidos geram falha controlada, não erro 500)

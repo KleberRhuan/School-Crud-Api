@@ -1,0 +1,51 @@
+=== Visão Geral do Fluxo de Autenticação
+
+O sistema segue uma arquitetura stateless com JWTs curtos para acesso e refresh tokens persistidos. O SPA se comunica com a API por HTTP usando tokens no cabeçalho. Abaixo, o fluxo padrão:
+
+[plantuml,auth-flow,svg]
+----
+@startuml
+actor User
+participant "SPA (React/Angular)" as SPA
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "TokenProvider" as Token
+participant "PostgreSQL" as DB
+
+User -> SPA : Digita email/senha
+SPA -> Controller : POST /auth/login {email, senha}
+Controller -> Service : autentica()
+Service -> DB : busca usuário + valida hash senha
+Service -> Token : gera access/refresh tokens
+Token --> Service : {accessToken, refreshToken}
+Service -> DB : salva refreshToken
+Service --> Controller : tokens emitidos
+Controller -> SPA : HTTP 200 + tokens
+
+== Após login ==
+SPA -> API : Authorization: Bearer accessToken
+API -> Token : valida token
+Token --> API : claims
+API -> SPA : resposta segura
+
+== Renovação ==
+SPA -> Controller : POST /auth/refresh {refreshToken}
+Controller -> Service : valida refreshToken
+Service -> DB : busca e valida refreshToken
+Service -> Token : emite novo accessToken
+Token --> Service : novo accessToken
+Service -> Controller : HTTP 200 + accessToken
+Controller -> SPA : novo accessToken
+
+== Logout ==
+SPA -> Controller : POST /auth/logout {refreshToken}
+Controller -> Service : invalida refreshToken
+Service -> DB : deleta/invalida token
+Controller -> SPA : HTTP 200
+@enduml
+----
+
+Notas:
+- Access Token: 15 minutos de validade.
+- Refresh Token: 7 dias, armazenado em tabela com metadata (IP, agent, data de expiração).
+- O sistema é compatível com múltiplos refresh tokens por usuário (multi-dispositivo).

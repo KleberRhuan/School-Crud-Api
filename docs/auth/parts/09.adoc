@@ -1,0 +1,44 @@
+== Gathering Results
+
+=== Avaliação de Requisitos
+
+Após a implantação do MVP, os seguintes critérios devem ser usados para verificar se os requisitos foram plenamente atendidos:
+
+- **Fluxo de Autenticação**
+- Autenticação via login funciona com tokens emitidos corretamente
+- Renovação de tokens válida o refresh token e gera novo access token
+- Logout revoga corretamente o refresh token
+
+- **Segurança**
+- Access tokens expirados não são aceitos
+- Refresh tokens revogados não podem ser reutilizados
+- Proteções contra brute-force e rate limiting ativas
+
+- **Mensagens de Erro**
+- Respostas padronizadas, localizadas e compreensíveis
+- Códigos internos identificáveis no log
+
+- **Arquitetura e Qualidade**
+- Testes automatizados cobrindo fluxos principais (>80% de cobertura)
+- Camadas bem separadas e testáveis isoladamente
+- Adesão aos princípios SOLID e Clean Architecture
+
+=== Monitoramento em Produção
+
+- Métricas expostas via `/actuator/metrics` e coletadas por Prometheus
+- Dashboards de login/logout/falhas em Grafana
+- Logs estruturados visíveis via Elasticsearch ou Kibana
+- Alertas automáticos configurados para padrões anômalos
+
+=== Feedback do Frontend
+
+- SPA deve conseguir renovar tokens sem redirecionamento
+- Mensagens de erro exibidas ao usuário final de forma amigável
+- Integração entre backend e frontend validada em navegadores e dispositivos variados
+
+=== Indicadores de Sucesso
+
+- Taxa de autenticação com sucesso > 95%
+- Nenhum token inválido aceito após expiração ou revogação
+- Número de falhas de autenticação anômalas detectadas e mitigadas
+- Nenhum incidente de segurança registrado no ambiente MVP

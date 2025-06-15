@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 @ConfigurationProperties(prefix = "app.validation.password")
-public class PasswordValidation {
+public class PasswordValidationProperties {
 
   /** Comprimento mínimo da senha. */
   private int minLength = 8;

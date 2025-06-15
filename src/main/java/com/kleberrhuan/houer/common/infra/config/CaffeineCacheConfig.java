@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 @EnableCaching
 @RequiredArgsConstructor
-public class CacheConfig {
+public class CaffeineCacheConfig {
 
   private final CacheSpecsProperties props;
 

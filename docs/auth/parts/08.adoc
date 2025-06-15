@@ -1,0 +1,50 @@
+== Milestones
+
+[cols="1,3"]
+|===
+| Fase | Entregas
+
+| M1 – Setup do Projeto
+|
+- Estrutura de pacotes conforme Clean Architecture
+- Configuração básica do Spring Boot, Security e CORS
+- Configuração do PostgreSQL (ou Testcontainers para dev)
+
+| M2 – Fluxo de Autenticação Básica
+|
+- Endpoint `/auth/login` funcionando
+- Geração de access e refresh tokens
+- Armazenamento do refresh token no banco
+- Validação básica de tokens
+
+| M3 – Fluxo de Renovação e Logout
+|
+- Endpoint `/auth/refresh` com rotação de refresh token
+- Endpoint `/auth/logout` com revogação do token no banco
+- DTOs, validações, e mensagens de erro consistentes
+
+| M4 – Segurança Avançada
+|
+- JwtAuthFilter funcional
+- Brute-force protection com cache simples
+- Rate limiting por IP no login
+- Headers de segurança aplicados
+
+| M5 – Observabilidade
+|
+- Métricas de login, falhas, renovações
+- Logs estruturados de tentativas e anomalias
+- Endpoint de healthcheck e métricas via Actuator
+
+| M6 – Internacionalização e Custom Errors
+|
+- Mensagens i18n configuradas (pt-BR + fallback en)
+- `GlobalExceptionHandler` aplicado em toda API
+
+| M7 – Extensões (Opcional)
+|
+- Redis para blocklist de tokens
+- Testes de carga com k6 ou Locust
+- Plano para futura integração com OIDC
+
+|===

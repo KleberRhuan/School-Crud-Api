@@ -1,0 +1,50 @@
+=== Componentes-Chave
+
+[cols="1,3"]
+|===
+| Componente | Responsabilidade
+
+| `AuthController`
+| Expor os endpoints REST: `/auth/login`, `/auth/refresh`, `/auth/logout`.
+
+| `AuthenticationUseCase`
+| Caso de uso principal: autentica o usuário e orquestra emissão dos tokens.
+
+| `TokenService`
+| Geração, parsing e validação de JWTs (access + refresh). Centraliza lógica de criptografia.
+
+| `RefreshTokenRepository`
+| Acesso ao banco de dados para salvar, buscar e invalidar refresh tokens.
+
+| `UserRepository`
+| Interface para buscar usuários com base no email.
+
+| `UserDetailsServiceImpl`
+| Implementação de `UserDetailsService`, usada pelo Spring Security para autenticação.
+
+| `SecurityConfig`
+| Classe de configuração do Spring Security: filtros, paths públicos, CORS, CSRF, etc.
+
+| `JwtAuthFilter`
+| Filtro que intercepta requests e autentica usuários com base no access token.
+
+| `GlobalExceptionHandler`
+| Captura exceções e retorna respostas padronizadas com i18n, códigos internos e metadados.
+
+| `BruteForceProtectionService`
+| Service para limitar tentativas de login (pode usar bucket/token algorithm + cache).
+
+| `AuthLogger`
+| Serviço para log estruturado (login, logout, falhas), integrável com observabilidade.
+
+| `AuthMetricsCollector`
+| Emissão de métricas via Micrometer: número de logins, falhas, renovações, logouts.
+
+| `RedisBlocklistService` _(opcional)_
+| Caso o projeto ative Redis, gerencia cache de tokens bloqueados (refresh ou access comprometidos).
+|===
+
+Fluxo típico:
+- Controller → UseCase → TokenService + Repositórios
+- Security → JwtAuthFilter → TokenService → Spring Context
+- Falhas → GlobalExceptionHandler → resposta amigável

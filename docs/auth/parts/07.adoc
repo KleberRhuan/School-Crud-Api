@@ -1,0 +1,63 @@
+== Implementation
+
+=== 1. Estrutura do Projeto
+- Criar projeto Spring Boot 3.5 (Java 17+), com dependências:
+- Spring Web, Spring Security, Spring Data JPA, PostgreSQL Driver
+- Spring Boot Actuator, Micrometer
+- Validation, Lombok
+- (Opcional: Redis Starter, Spring Retry)
+
+- Criar a estrutura de pacotes conforme especificado:
+- `domain`, `application`, `infrastructure`, `interfaces.web`, `config`
+
+=== 2. Segurança (SecurityConfig)
+- Configurar `SecurityFilterChain`:
+- Desabilitar CSRF
+- Permitir endpoints públicos: `/auth/login`, `/auth/refresh`, `/auth/logout`
+- Registrar filtro `JwtAuthFilter` antes do filtro de autenticação padrão
+- Configurar CORS com origens externas
+
+=== 3. Autenticação
+- Implementar `UserDetailsServiceImpl` + `PasswordEncoder`
+- Criar `AuthController` com endpoints:
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+
+- Criar os DTOs: `LoginRequest`, `TokenResponse`, `RefreshRequest`, etc.
+
+- Implementar casos de uso:
+- `AuthenticateUser`
+- `RefreshAccessToken`
+- `LogoutService`
+
+- Criar e configurar `JwtTokenProvider` (gera e valida access token)
+
+=== 4. Gerenciamento de Tokens
+- Criar entidade `RefreshToken` com campos necessários
+- Criar `RefreshTokenRepository` com interface JPA
+- Implementar serviço para emitir, validar e revogar refresh tokens
+
+- Opcional: `RedisBlocklistService` com TTL baseado no `exp` do token
+
+=== 5. Proteções Adicionais
+- Criar `BruteForceProtectionService` com cache em memória ou Redis
+- Aplicar em `AuthenticateUser` antes de validar senha
+
+- Criar `RateLimitFilter` para limitar chamadas em `/auth/login`
+- Criar `GlobalExceptionHandler` com suporte a mensagens i18n
+
+=== 6. Observabilidade
+- Configurar logs estruturados via `AuthLogger`
+- Emitir métricas com `AuthMetricsCollector` usando Micrometer
+- Integrar com Actuator e endpoint `/actuator/metrics`
+
+=== 7. Testes
+- Escrever testes unitários para casos de uso e serviços
+- Criar testes de integração com banco real (Testcontainers)
+- Simular cenário completo: login → renovação → logout
+
+=== 8. Preparação para Produção
+- Definir variáveis de ambiente (JWT secret, tempo de expiração, CORS)
+- Definir política de rotação do JWT secret
+- Configurar headers de segurança e cache-control

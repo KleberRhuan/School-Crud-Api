@@ -1,0 +1,38 @@
+=== Segurança Avançada
+
+==== CORS
+- Configurado em `SecurityConfig` via `CorsConfigurationSource`
+- Origens permitidas: `https://app.frontend.com` (ajustável por env var)
+- Métodos: `GET`, `POST`, `PUT`, `DELETE`
+- Cabeçalhos: `Authorization`, `Content-Type`
+- Expiração do preflight: `3600s`
+
+==== CSRF
+- Desabilitado (`csrf().disable()`), pois usamos autenticação via tokens (stateless)
+- A proteção contra CSRF é delegada à arquitetura do token e ao domínio separado da SPA
+
+==== Rate Limiting
+- Implementação via filtro customizado ou biblioteca (ex: Bucket4j)
+- Estratégia:
+- Endpoint: `/auth/login`
+- Limite: 5 tentativas por IP por minuto
+- Resposta: 429 Too Many Requests com Retry-After
+
+==== Brute-Force Protection
+- Componente: `BruteForceProtectionService`
+- Cache (Redis ou memória local) registra tentativas falhas por IP + email
+- A cada falha:
+- Incrementa contador
+- Se ultrapassar limiar, bloqueia temporariamente
+- Pode gerar alerta automático no `AuthMetricsCollector`
+
+==== Headers de Segurança (via Spring Security HeadersConfigurer)
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `Strict-Transport-Security`: se HTTPS está ativo
+- `Cache-Control: no-store` em endpoints sensíveis
+
+==== Considerações de SPA
+- Tokens são armazenados no SPA em memória ou secure http-only cookies
+- Nunca armazenar JWTs em `localStorage` ou `sessionStorage`
