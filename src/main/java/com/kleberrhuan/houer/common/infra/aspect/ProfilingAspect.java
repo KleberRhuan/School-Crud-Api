@@ -4,7 +4,6 @@ package com.kleberrhuan.houer.common.infra.aspect;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -13,15 +12,20 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class ProfilingAspect {
 
   private final MeterRegistry registry;
-  private final Counter errorCounter = Counter
-    .builder("service.errors.total")
-    .description("Total de exceções lançadas em serviços")
-    .register(registry);
+  private final Counter errorCounter;
+
+  public ProfilingAspect(MeterRegistry registry) {
+    this.registry = registry;
+    this.errorCounter =
+      Counter
+        .builder("service.errors.total")
+        .description("Total de exceções lançadas em serviços")
+        .register(registry);
+  }
 
   @Around("@within(org.springframework.stereotype.Service)")
   public Object profile(ProceedingJoinPoint pjp) throws Throwable {

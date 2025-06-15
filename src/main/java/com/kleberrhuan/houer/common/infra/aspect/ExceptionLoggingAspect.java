@@ -4,6 +4,7 @@ package com.kleberrhuan.houer.common.infra.aspect;
 import com.kleberrhuan.houer.common.infra.exception.ApiException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -20,10 +21,16 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class ExceptionLoggingAspect {
 
   private final MeterRegistry registry;
-  private final Counter totalErrors = Counter
-    .builder("app.errors.total")
-    .description("Total de exceções não capturadas")
-    .register(registry);
+  private Counter totalErrors;
+
+  @PostConstruct
+  public void init() {
+    totalErrors =
+      Counter
+        .builder("app.errors.total")
+        .description("Total de exceções não capturadas")
+        .register(registry);
+  }
 
   @AfterThrowing(
     pointcut = "within(@org.springframework.web.bind.annotation.RestController *)",

@@ -7,7 +7,12 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableScheduling
-@ConfigurationPropertiesScan("com.kleberrhuan.houer.common.infra.properties")
+@ConfigurationPropertiesScan(
+  {
+    "com.kleberrhuan.houer.common.infra.properties",
+    "com.kleberrhuan.houer.auth.infra.properties",
+  }
+)
 @SpringBootApplication
 public class HouerApplication {
 

@@ -2,9 +2,8 @@
 package com.kleberrhuan.houer.common.infra.config;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import io.github.bucket4j.Bucket;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,18 +11,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CacheFactory {
 
-  private final Map<String, Cache<String, AtomicInteger>> caches;
-  private final Map<String, Cache<String, Instant>> instantCaches;
+  @Getter
+  private final Cache<String, Bucket> rateLimitCache;
 
-  public Cache<String, AtomicInteger> getMinuteCache() {
-    return caches.get("rate-minute");
-  }
-
-  public Cache<String, AtomicInteger> getAuthCache() {
-    return caches.get("rate-auth");
-  }
-
-  public Cache<String, Instant> getJwtBlacklist() {
-    return instantCaches.get("jwt-blacklist");
-  }
+  @Getter
+  private final Cache<String, Boolean> jwtBlockList;
 }
