@@ -30,10 +30,10 @@ public class JpaOutboxStore implements OutboxStore {
   private final JdbcTemplate jdbc;
 
   @Override
-  public void save(OutboxMessage msg) {
+  public void save(OutboxMessage m) {
     try {
-      repo.save(msg);
-    } catch (DataAccessException ex) {
+      repo.save(m);
+    } catch (DataAccessException e) {
       throw new OutboxPersistenceException();
     }
   }
@@ -54,7 +54,7 @@ public class JpaOutboxStore implements OutboxStore {
     try {
       jdbc.queryForObject("SELECT 1", Integer.class);
       return StoreHealth.UP;
-    } catch (Exception ex) {
+    } catch (Exception e) {
       return StoreHealth.DOWN;
     }
   }

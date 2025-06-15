@@ -8,13 +8,11 @@ import com.kleberrhuan.houer.common.application.port.notification.OutboxStore;
 import com.kleberrhuan.houer.common.domain.model.OutboxMessage;
 import com.kleberrhuan.houer.common.infra.properties.OutboxResilienceProperties;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.time.Instant;
+import jakarta.annotation.PostConstruct;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -22,7 +20,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Order(3)
 @Slf4j
-@RequiredArgsConstructor
 public class InMemoryOutboxStore implements OutboxStore {
 
   private static final String METRIC_QUEUE_SIZE = "outbox.due.queue.size";
@@ -31,24 +28,31 @@ public class InMemoryOutboxStore implements OutboxStore {
   private final MeterRegistry metrics;
   private final BlockingQueue<OutboxMessage> dueMessages =
     new LinkedBlockingQueue<>();
-  private final OutboxExpiryPolicy expiryPolicy = new OutboxExpiryPolicy();
-  private final Cache<UUID, OutboxMessage> messageCache = Caffeine
-    .newBuilder()
-    .maximumSize(cfg.inMemoryMaxSize())
-    .expireAfter(expiryPolicy)
-    .removalListener(this::onRemoval)
-    .build();
+  private final Cache<UUID, OutboxMessage> messageCache;
 
-  private long expiryDelayNanos(OutboxMessage v) {
-    long delayMs =
-      v.getNextAttemptAt().toEpochMilli() - Instant.now().toEpochMilli();
-    return TimeUnit.MILLISECONDS.toNanos(Math.max(0, delayMs));
+  public InMemoryOutboxStore(
+    OutboxResilienceProperties cfg,
+    MeterRegistry metrics
+  ) {
+    this.cfg = cfg;
+    this.metrics = metrics;
+    OutboxExpiryPolicy expiryPolicy = new OutboxExpiryPolicy();
+    this.messageCache =
+      Caffeine
+        .newBuilder()
+        .maximumSize(cfg.inMemoryMaxSize())
+        .expireAfter(expiryPolicy)
+        .removalListener(this::onRemoval)
+        .build();
+  }
+
+  @PostConstruct
+  void init() {
+    metrics.gauge(METRIC_QUEUE_SIZE, this, s -> s.dueMessages.size());
   }
 
   private void onRemoval(UUID k, OutboxMessage v, RemovalCause cause) {
-    if (v != null && cause == RemovalCause.EXPIRED) {
-      dueMessages.offer(v);
-    }
+    if (v != null && cause == RemovalCause.EXPIRED) dueMessages.offer(v);
   }
 
   @Override
@@ -58,14 +62,6 @@ public class InMemoryOutboxStore implements OutboxStore {
 
   @Override
   public Optional<OutboxMessage> pollNextDue() {
-    metrics.gauge(METRIC_QUEUE_SIZE, dueMessages, BlockingQueue::size);
-    if (dueMessages.size() > cfg.dueQueueWarningThreshold()) {
-      log.warn(
-        "Due queue size {} exceeded threshold {}",
-        dueMessages.size(),
-        cfg.dueQueueWarningThreshold()
-      );
-    }
     return Optional.ofNullable(dueMessages.poll());
   }
 

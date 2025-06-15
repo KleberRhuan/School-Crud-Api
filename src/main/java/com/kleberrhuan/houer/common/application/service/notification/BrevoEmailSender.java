@@ -1,5 +1,5 @@
 /* (C)2025 Kleber Rhuan */
-package com.kleberrhuan.houer.common.application.service;
+package com.kleberrhuan.houer.common.application.service.notification;
 
 import com.kleberrhuan.houer.common.application.mapper.BrevoMapper;
 import com.kleberrhuan.houer.common.application.port.notification.EmailNotification;
@@ -10,6 +10,7 @@ import com.kleberrhuan.houer.common.domain.model.notification.Provider;
 import com.kleberrhuan.houer.common.infra.adapter.notification.client.brevo.BrevoApi;
 import com.kleberrhuan.houer.common.infra.exception.EmailDeliveryException;
 import com.kleberrhuan.houer.common.infra.outbox.ResilientOutboxStore;
+import com.kleberrhuan.houer.common.infra.properties.BrevoProps;
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.SendSmtpEmail;
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.response.SendSmtpEmailResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -23,7 +24,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
-import org.springframework.retry.annotation.Recover;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -35,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 public class BrevoEmailSender implements EmailNotification {
 
   private final BrevoMapper mapper;
+  private final BrevoProps props;
   private final MeterRegistry registry;
   private final ResilientOutboxStore store;
   private final BrevoApi api;
@@ -56,11 +57,11 @@ public class BrevoEmailSender implements EmailNotification {
   @CircuitBreaker(name = "brevo-email", fallbackMethod = "fallback")
   @Observed(name = "email.brevo.send")
   public void send(@Valid NotificationModel n) {
-    SendSmtpEmail payload = mapper.toBrevo(n);
+    SendSmtpEmail payload = mapper.toBrevo(n, props);
     SendSmtpEmailResponse resp = this.send(payload, provider());
     log.info("Brevo messageId={}", resp.messageId());
   }
-  
+
   public void fallback(Throwable ex, NotificationModel n) {
     outboxCounter.increment();
     store.save(OutboxMessage.create(n));

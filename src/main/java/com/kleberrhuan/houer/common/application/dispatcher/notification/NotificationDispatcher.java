@@ -1,5 +1,5 @@
 /* (C)2025 Kleber Rhuan */
-package com.kleberrhuan.houer.common.application.service.notification;
+package com.kleberrhuan.houer.common.application.dispatcher.notification;
 
 import com.kleberrhuan.houer.common.application.port.dispatcher.DispatcherService;
 import com.kleberrhuan.houer.common.application.port.notification.Notification;
@@ -14,7 +14,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 public class NotificationDispatcher
   implements DispatcherService<NotificationModel> {

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Confirme sua conta • Houer</title>
+
+    <style>
+        body, table, td, a {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        img {
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+            display: block;
+        }
+
+        table {
+            border-collapse: collapse !important;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+            border-spacing: 0;
+            padding: 0;
+        }
+
+        td {
+            padding: 0;
+            border-spacing: 0;
+        }
+
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #F4F6F8;
+            width: 100% !important;
+            min-width: 100%;
+        }
+        
+        .main-table {
+            width: 100%;
+            background-color: #F4F6F8;
+        }
+
+        .main-cell {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        .email-content {
+            padding: 40px;
+        }
+
+        .logo-container {
+            text-align: center;
+            padding-bottom: 32px;
+        }
+
+        .logo {
+            width: 120px;
+            max-width: 100%;
+        }
+
+        .heading-primary {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1.2;
+        }
+
+        .text-body {
+            margin: 16px 0 0;
+            font-size: 16px;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .text-small {
+            font-size: 12px;
+            color: #6B7280;
+            line-height: 1.4;
+        }
+
+        .text-caption {
+            font-size: 11px;
+            color: #9CA3AF;
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .btn-container {
+            text-align: center;
+            padding: 32px 0;
+        }
+
+        .btn-primary {
+            background-color: #4f46e5;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 14px 24px;
+            border-radius: 6px;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #3730a3;
+        }
+
+        .greeting-section {
+            padding-bottom: 24px;
+        }
+
+        .footer-section {
+            border-top: 1px solid #E5E7EB;
+            padding-top: 24px;
+            margin-top: 24px;
+        }
+
+        @media screen and (max-width: 600px) {
+            .email-content {
+                padding: 24px !important;
+            }
+
+            .heading-primary {
+                font-size: 24px !important;
+                line-height: 28px !important;
+            }
+
+            .btn-primary {
+                padding: 12px 20px !important;
+                font-size: 14px !important;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .email-container {
+                border-radius: 0 !important;
+                margin: 0 !important;
+            }
+
+            .email-content {
+                padding: 20px !important;
+            }
+        }
+
+        /* Outlook */
+        .ExternalClass {
+            width: 100%;
+        }
+
+        .ExternalClass,
+        .ExternalClass p,
+        .ExternalClass span,
+        .ExternalClass font,
+        .ExternalClass td,
+        .ExternalClass div {
+            line-height: 100%;
+        }
+
+        /* Yahoo Mail */
+        .yshortcuts a {
+            border-bottom: none !important;
+        }
+
+        /* iOS Mail Links */
+        .appleLinks a {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+    </style>
+</head>
+
+<body>
+<!-- Container principal do email -->
+<table role="presentation" class="main-table">
+    <tr>
+        <td class="main-cell">
+
+            <!-- Container do conteúdo -->
+            <table role="presentation" class="email-container">
+                <tr>
+                    <td class="email-content">
+
+                        <!-- Logo -->
+                        <div class="logo-container">
+                            <img src="https://houer.app/assets/logo-mail.png"
+                                 alt="Logo da Houer"
+                                 class="logo">
+                        </div>
+
+                        <!-- Saudação -->
+                        <div class="greeting-section">
+                            <h1 class="heading-primary">Bem-vindo, ${name}!</h1>
+                            <p class="text-body">
+                                Falta pouco para concluir o seu cadastro na <strong>Houer</strong>.
+                                Basta clicar no botão abaixo para verificar sua conta.
+                            </p>
+                        </div>
+
+                        <!-- Botão de confirmação -->
+                        <div class="btn-container">
+                            <a th:href="${verifyLink}"
+                               class="btn-primary"
+                               style="color: #ffffff;">
+                                Confirmar conta
+                            </a>
+                        </div>
+
+                        <!-- Rodapé informativo -->
+                        <div class="footer-section">
+                            <p class="text-small">
+                                Se você não criou uma conta na Houer, apenas ignore este e-mail.
+                                <br>
+                                <strong>O link expira em 24 horas.</strong>
+                            </p>
+                        </div>
+
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Copyright -->
+            <p class="text-caption">
+                © 2025 Houer · Todos os direitos reservados
+            </p>
+
+        </td>
+    </tr>
+</table>
+</body>
+</html> 

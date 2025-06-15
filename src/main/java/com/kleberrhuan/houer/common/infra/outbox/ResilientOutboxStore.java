@@ -74,6 +74,11 @@ public class ResilientOutboxStore implements OutboxStore {
   }
 
   @Override
+  public List<OutboxMessage> pollNextDue(int n) {
+    return run(s -> s.pollNextDue(n), "pollBatch");
+  }
+
+  @Override
   public StoreHealth health() {
     return stores
         .stream()
