@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(
@@ -25,6 +26,7 @@ import lombok.Setter;
   name = "User.roles",
   attributeNodes = @NamedAttributeNode("roles")
 )
+@SQLRestriction("enabled = true")
 public class User extends SoftDeletableAuditable<Long> {
 
   @Id

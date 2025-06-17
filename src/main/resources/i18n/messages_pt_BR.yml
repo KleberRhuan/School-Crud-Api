@@ -92,3 +92,8 @@ error:
     bad-credentials:
       detail: "Credenciais inválidas."
       message: "E-mail ou senha incorretos. Verifique e tente novamente."
+    password-reset:
+      token:
+        invalid:
+          detail: "Token de redefinição inválido."
+          message: "O token de redefinição de senha é inválido, expirado ou já foi utilizado."

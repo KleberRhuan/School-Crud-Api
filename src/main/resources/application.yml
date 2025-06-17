@@ -1,4 +1,4 @@
-# Configura��es comuns a todos os ambientes
+# Configurações comuns a todos os ambientes
 spring:
   main:
     web-application-type: servlet
@@ -7,8 +7,8 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     username: ${JDBC_DATABASE_USERNAME:postgres}
-    password: ${JDBC_DATABASE_PASSWORD:Teste123@}    
-    hikari:     # Configura��es de pool de conex�es HikariCP
+    password: ${JDBC_DATABASE_PASSWORD:Teste123@}
+    hikari: # Configurações de pool de conexões HikariCP
       connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
       idle-timeout: ${DB_IDLE_TIMEOUT:600000}
       max-lifetime: ${DB_MAX_LIFETIME:1800000}
@@ -17,11 +17,11 @@ spring:
       pool-name: HouerHikariCP
       connection-test-query: SELECT 1
       leak-detection-threshold: ${DB_LEAK_DETECTION:60000}
-      
+
   web:
     locale: pt_BR
     locale-resolver: fixed
-  
+
   application:
     name: houer
   profiles:
@@ -32,16 +32,16 @@ spring:
         jwt:
           authorities-claim-name: scope
           authority-prefix: ROLE_
-  
-  # Configura��es de banco de dados
+
+  # Configurações de banco de dados
   flyway:
     default-schema: config
     locations: classpath:db/migration
     validate-on-migrate: true
     clean-disabled: true
     baseline-on-migrate: false
-  
-  # Configura��es de serializa��o
+
+  # Configurações de serialização
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -52,8 +52,8 @@ spring:
       fail-on-unknown-properties: true
       accept-empty-string-as-null-object: true
     default-property-inclusion: NON_NULL
-  
-  # Configura��es JPA
+
+  # Configurações JPA
   jpa:
     open-in-view: false
     properties:
@@ -67,10 +67,10 @@ spring:
         query:
           plan_cache_max_size: 2048
           in_clause_parameter_padding: true
-  
+
   docker:
     compose:
-      enabled: false
+      enabled: true
 
 springdoc:
   api-docs:
@@ -83,25 +83,23 @@ springdoc:
     filter: true
     syntaxHighlight:
       activated: true
-    # Configura��es de autentica��o persistentes
+    # Configurações de autenticação persistentes
     persistAuthorization: true
-    # Layout da documenta��o
+    # Layout da documentação
     displayRequestDuration: true
 
-  # Configura��es gerais
+  # Configurações gerais
   default-produces-media-type: application/json
   default-consumes-media-type: application/json
   show-actuator: false
   writer-with-default-pretty-printer: true
 
-
-
-# Configura��o de propriedade para habilitar/desabilitar a documenta��o
+# Configuração de propriedade para habilitar/desabilitar a documentação
 api:
   swagger:
     enabled: true
 
-# Configura��es de seguran�a
+# Configurações de segurança
 jwt:
   publicKey: ${JWT_PUBLIC_KEY:classpath:certificates/public.pub}
   privateKey: ${JWT_PRIVATE_KEY:classpath:certificates/private.pem}
@@ -113,11 +111,14 @@ auth:
   reset:
     code-length: 6
     ttl-in-seconds: ${AUTH_RESET_EXPIRATION:900}
+    max-attempts-per-hour: ${AUTH_MAX_RESET_ATTEMPTS:3}
+    frontend-base-url: ${APP_FRONTEND_URL:http://localhost:3000}
   cache:
     provider: caffeine
 
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
+
   notification:
     provider:
       email: brevo
@@ -127,7 +128,7 @@ app:
     fallback-to-system-locale: true
   outbox:
     retry-interval: 60s
-  # Configura��es de notifica��o
+  # Configurações de notificação
   brevo:
     api-key: ${BREVO_API_KEY}
     name: ${BREVO_NAME:Houer Test}
@@ -135,34 +136,34 @@ app:
     url: ${BREVO_URL:https://kleberrhuan.dev}
     connect-timeout: 3 #(Segundos)
     read-timeout: 5 #(Segundos)
-  
-  # Configura��es da aplica��o
+
+  # Configurações da aplicação
   houer:
     url: ${HOUER_RESEARCH_URL:http://localhost:8080}
     caches:
       default:
         ttl: 30m
-        maxSize: 1000
+        max-size: 1000
       rate-limit:
         ttl: 1m
-        maxSize: 20000
+        max-size: 20000
       jwt-blacklist:
         ttl: 15m
-        maxSize: 20000
-  
-  # Configura��es de Rate Limiting
+        max-size: 20000
+
+  # Configurações de Rate Limiting
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
-    
-  # Configura��es de CORS
+
+  # Configurações de CORS
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS
     allowed-headers: "*"
     allow-credentials: true
     max-age: 3600
-  
-  # Configura��es de valida��o
+
+  # Configurações de validação
   validation:
     password:
       min-length: ${PASSWORD_MIN_LENGTH:8}
@@ -170,15 +171,15 @@ app:
       require-lowercase: ${PASSWORD_REQUIRE_LOWERCASE:true}
       require-numbers: ${PASSWORD_REQUIRE_NUMBERS:true}
       require-special-chars: ${PASSWORD_REQUIRE_SPECIAL:true}
-  
-  # Configura��es de arquivo/upload
+
+  # Configurações de arquivo/upload
   file:
     upload:
       max-size: ${FILE_MAX_SIZE:10MB}
       allowed-types: ${FILE_ALLOWED_TYPES:pdf,doc,docx,xls,xlsx,png,jpg,jpeg}
       temp-directory: ${FILE_TEMP_DIR:/tmp/houer-uploads}
-  
-  # Configura��es de auditoria
+
+  # Configurações de auditoria
   audit:
     enabled: ${AUDIT_ENABLED:true}
     log-requests: ${AUDIT_LOG_REQUESTS:true}
@@ -190,7 +191,7 @@ app:
     sensitive-headers: ${AUDIT_SENSITIVE_HEADERS:Authorization,Cookie,X-API-Key,X-Auth-Token}
     ignored-paths: ${AUDIT_IGNORED_PATHS:/actuator/**,/swagger-ui/**,/api-docs/**}
 
-# Configura��es do servidor
+# Configurações do servidor
 server:
   port: ${SERVER_PORT:8080}
   compression:
@@ -213,7 +214,7 @@ server:
     max-connections: ${SERVER_TOMCAT_MAX_CONNECTIONS:8192}
     accept-count: ${SERVER_TOMCAT_ACCEPT_COUNT:100}
     relaxed-query-chars: ["[", "]"]
-  
+
 management:
   endpoints:
     web:
@@ -229,7 +230,6 @@ management:
     sampling:
       probability: 1.0
 
-
 resilience4j:
   retry:
     instances:
@@ -239,7 +239,17 @@ resilience4j:
         exponential-backoff-multiplier: 2
   circuitbreaker:
     instances:
+      outbox-store:
+        base-config: default
       brevo-email:
         failure-rate-threshold: 50
         sliding-window-size: 20
         wait-duration-in-open-state: 30s
+    configs:
+      default:
+        slidingWindowSize: 50
+        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+
+outbox:
+  backoff: 30s
