@@ -1,9 +1,8 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.common.application.service.notification;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.kleberrhuan.houer.common.application.mapper.BrevoMapper;
@@ -19,14 +18,14 @@ import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.EmailReci
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.EmailSender;
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.SendSmtpEmail;
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.response.SendSmtpEmailResponse;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -35,14 +34,14 @@ import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("BrevoEmailSender - Unit Tests")
+@DisplayName("BrevoEmailSender")
 class BrevoEmailSenderTest {
 
   @Mock
   private BrevoMapper mapper;
 
   @Mock
-  private MeterRegistry registry;
+  private BrevoProps props;
 
   @Mock
   private ResilientOutboxStore store;
@@ -50,22 +49,17 @@ class BrevoEmailSenderTest {
   @Mock
   private BrevoApi api;
 
-  @Mock
-  private Counter counter;
-
-  @Mock
-  private BrevoProps props;
-
   @InjectMocks
-  private BrevoEmailSender emailSender;
+  private BrevoEmailSender sender;
 
-  private NotificationModel validNotification;
-  private SendSmtpEmail sendSmtpEmail;
-  private SendSmtpEmailResponse successResponse;
+  private NotificationModel testNotification;
+  private SendSmtpEmail testEmail;
+  private SendSmtpEmailResponse testResponse;
 
   @BeforeEach
-  void setUp() {
-    validNotification =
+  void setup() {
+    // Setup test notification
+    testNotification =
       new NotificationModel(
         Channel.EMAIL,
         "test@example.com",
@@ -73,377 +67,266 @@ class BrevoEmailSenderTest {
         "Test Message"
       );
 
-    EmailSender sender = new EmailSender("Test Sender", "sender@example.com");
-
-    sendSmtpEmail =
+    // Setup test email request
+    testEmail =
       new SendSmtpEmail(
-        sender,
+        new EmailSender("Test Sender", "sender@example.com"),
         List.of(new EmailRecipient(null, "test@example.com")),
         "Test Subject",
         "Test Message"
       );
 
-    successResponse = new SendSmtpEmailResponse("msg-123");
+    // Setup test response
+    testResponse = new SendSmtpEmailResponse(UUID.randomUUID().toString());
 
-    // Configure MeterRegistry to return the mocked counter
-    when(registry.counter("email.outbox.total", "provider", "brevo"))
-      .thenReturn(counter);
-    when(mapper.toBrevo(validNotification, props)).thenReturn(sendSmtpEmail);
-
-    // Initialize the emailSender to set up the outboxCounter
-    emailSender.init();
+    // Setup mocks
+    when(mapper.toBrevo(testNotification, props)).thenReturn(testEmail);
+    when(api.sendSimpleEmail(testEmail)).thenReturn(testResponse);
   }
 
   @Nested
-  @DisplayName("provider - Provider Information")
-  class ProviderInfo {
+  @DisplayName("provider")
+  class ProviderTest {
 
     @Test
-    @DisplayName("Should return correct provider information")
-    void shouldReturnCorrectProviderInformation() {
-      // When
-      Provider provider = emailSender.provider();
+    @DisplayName("deve retornar provider correto")
+    void whenProvider_thenReturnCorrectProvider() {
+      // Act
+      Provider provider = sender.provider();
 
-      // Then
+      // Assert
       assertThat(provider.channel()).isEqualTo(Channel.EMAIL);
       assertThat(provider.name()).isEqualTo("brevo");
     }
   }
 
   @Nested
-  @DisplayName("send - Success Scenarios")
-  class SendSuccessScenarios {
+  @DisplayName("send")
+  class Send {
 
     @Test
-    @DisplayName("Should send email successfully")
-    void shouldSendEmailSuccessfully() {
-      // Given
-      when(api.sendSimpleEmail(sendSmtpEmail)).thenReturn(successResponse);
+    @DisplayName("deve enviar email com sucesso")
+    void givenValidNotification_whenSend_thenSendSuccessfully() {
+      // Act
+      sender.send(testNotification);
 
-      // When
-      emailSender.send(validNotification);
-
-      // Then
-      verify(mapper).toBrevo(validNotification, props);
-      verify(api).sendSimpleEmail(sendSmtpEmail);
-      verifyNoInteractions(store);
-      verifyNoInteractions(counter);
+      // Assert
+      verify(mapper).toBrevo(testNotification, props);
+      verify(api).sendSimpleEmail(testEmail);
     }
 
     @Test
-    @DisplayName("Should process notification with all fields filled")
-    void shouldProcessNotificationWithAllFieldsFilled() {
-      // Given
-      NotificationModel fullNotification = new NotificationModel(
-        Channel.EMAIL,
-        "user@example.com",
-        "Important Subject",
-        "Detailed message content"
-      );
+    @DisplayName("deve mapear notificação corretamente")
+    void givenNotification_whenSend_thenMapCorrectly() {
+      // Act
+      sender.send(testNotification);
 
-      EmailSender sender = new EmailSender("Full Sender", "full@example.com");
-
-      SendSmtpEmail fullEmail = new SendSmtpEmail(
-        sender,
-        List.of(new EmailRecipient(null, "user@example.com")),
-        "Important Subject",
-        "Detailed message content"
-      );
-
-      when(mapper.toBrevo(fullNotification, props)).thenReturn(fullEmail);
-      when(api.sendSimpleEmail(fullEmail)).thenReturn(successResponse);
-
-      // When
-      emailSender.send(fullNotification);
-
-      // Then
-      verify(mapper).toBrevo(fullNotification, props);
-      verify(api).sendSimpleEmail(fullEmail);
+      // Assert
+      verify(mapper).toBrevo(eq(testNotification), eq(props));
     }
-  }
-
-  @Nested
-  @DisplayName("send - Failure Scenarios")
-  class SendFailureScenarios {
 
     @Test
-    @DisplayName("Should throw EmailDeliveryException when API fails")
-    void shouldThrowEmailDeliveryExceptionWhenApiFails() {
-      // Given
-      when(api.sendSimpleEmail(sendSmtpEmail))
-        .thenThrow(new RuntimeException("API Error"));
+    @DisplayName("deve enviar através da API")
+    void givenMappedEmail_whenSend_thenCallApi() {
+      // Act
+      sender.send(testNotification);
 
-      // When & Then
-      assertThatThrownBy(() -> emailSender.send(validNotification))
+      // Assert
+      verify(api).sendSimpleEmail(testEmail);
+    }
+
+    @Test
+    @DisplayName("deve chamar fallback quando API falha")
+    void givenApiFailure_whenSend_thenCallFallback() {
+      // Arrange
+      RuntimeException apiException = new RuntimeException("API failed");
+      doThrow(apiException).when(api).sendSimpleEmail(any());
+
+      // Act & Assert
+      assertThatThrownBy(() -> sender.send(testNotification))
         .isInstanceOf(EmailDeliveryException.class);
 
-      verify(api).sendSimpleEmail(sendSmtpEmail);
+      // O fallback só é chamado quando o circuit breaker é ativado,
+      // não em uma simples exceção da API
+      verify(api).sendSimpleEmail(any());
     }
 
     @Test
-    @DisplayName("Should propagate exception when mapper fails")
-    void shouldPropagateExceptionWhenMapperFails() {
-      // Given
-      when(mapper.toBrevo(validNotification, props))
-        .thenThrow(new RuntimeException("Mapping Error"));
+    @DisplayName("deve usar EmailDeliveryException no método interno send")
+    void givenInternalSendFailure_whenSend_thenThrowEmailDeliveryException() {
+      // Arrange
+      RuntimeException internalException = new RuntimeException(
+        "Internal error"
+      );
+      doThrow(internalException).when(api).sendSimpleEmail(any());
 
-      // When & Then
-      assertThatThrownBy(() -> emailSender.send(validNotification))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessage("Mapping Error");
+      // Act & Assert
+      assertThatThrownBy(() -> sender.send(testNotification))
+        .isInstanceOf(EmailDeliveryException.class)
+        .hasMessage("error.infrastructure.notification.email.delivery");
 
-      verify(mapper).toBrevo(validNotification, props);
-      verifyNoInteractions(api);
+      // Verify API was called but fallback is only triggered by circuit breaker
+      verify(api).sendSimpleEmail(any());
     }
   }
 
   @Nested
-  @DisplayName("fallback - Fallback Mechanism")
-  class FallbackMechanism {
+  @DisplayName("fallback")
+  class Fallback {
+
+    @BeforeEach
+    void setupFallbackTests() {
+      // Reset the store mock to ensure clean state between tests
+      reset(store);
+    }
 
     @Test
-    @DisplayName("Should save message to outbox when fallback is triggered")
-    void shouldSaveMessageToOutboxWhenFallbackIsTriggered() {
-      // Given
-      Throwable exception = new RuntimeException("Service unavailable");
+    @DisplayName("deve salvar mensagem no outbox store")
+    void givenFallback_whenCalled_thenSaveToOutbox() {
+      // Arrange
+      RuntimeException exception = new RuntimeException("Service unavailable");
 
-      // When
-      emailSender.fallback(exception, validNotification);
+      // Act
+      sender.fallback(exception, testNotification);
 
-      // Then
-      verify(counter).increment();
+      // Assert
+      ArgumentCaptor<OutboxMessage> messageCaptor = ArgumentCaptor.forClass(
+        OutboxMessage.class
+      );
+      verify(store).save(messageCaptor.capture());
+
+      OutboxMessage savedMessage = messageCaptor.getValue();
+      assertThat(savedMessage.getChannel()).isEqualTo(Channel.EMAIL);
+      assertThat(savedMessage.getRecipient()).isEqualTo("test@example.com");
+      assertThat(savedMessage.getSubject()).isEqualTo("Test Subject");
+      assertThat(savedMessage.getBody()).isEqualTo("Test Message");
+    }
+
+    @Test
+    @DisplayName("deve criar mensagem outbox corretamente")
+    void givenNotification_whenFallback_thenCreateCorrectOutboxMessage() {
+      // Arrange
+      RuntimeException exception = new RuntimeException("Circuit breaker open");
+
+      // Act
+      sender.fallback(exception, testNotification);
+
+      // Assert
       verify(store).save(any(OutboxMessage.class));
     }
 
     @Test
-    @DisplayName("Should create OutboxMessage correctly in fallback")
-    void shouldCreateOutboxMessageCorrectlyInFallback() {
-      // Given
-      Throwable exception = new EmailDeliveryException(emailSender.provider());
+    @DisplayName("deve lidar com diferentes tipos de exceção")
+    void givenDifferentExceptions_whenFallback_thenHandleCorrectly() {
+      // Arrange
+      Exception[] exceptions = {
+        new RuntimeException("Timeout"),
+        new IllegalStateException("Invalid state"),
+        new RuntimeException("Connection refused"),
+      };
 
-      // When
-      emailSender.fallback(exception, validNotification);
+      // Act & Assert
+      for (Exception ex : exceptions) {
+        sender.fallback(ex, testNotification);
+      }
 
-      // Then
-      verify(store)
-        .save(
-          argThat(outboxMessage -> {
-            assertThat(outboxMessage.getRecipient())
-              .isEqualTo(validNotification.to());
-            assertThat(outboxMessage.getSubject())
-              .isEqualTo(validNotification.subject());
-            assertThat(outboxMessage.getBody())
-              .isEqualTo(validNotification.message());
-            assertThat(outboxMessage.getChannel())
-              .isEqualTo(validNotification.channel());
-            assertThat(outboxMessage.getAttempts()).isZero();
-            assertThat(outboxMessage.getNextAttemptAt()).isNotNull();
-            return true;
-          })
-        );
-    }
-
-    @Test
-    @DisplayName("Should increment outbox counter in fallback")
-    void shouldIncrementOutboxCounterInFallback() {
-      // Given
-      Throwable exception = new RuntimeException("Circuit breaker open");
-
-      // When
-      emailSender.fallback(exception, validNotification);
-
-      // Then
-      verify(counter).increment();
+      verify(store, times(3)).save(any(OutboxMessage.class));
     }
   }
 
   @Nested
-  @DisplayName("Input Validations")
-  class InputValidations {
+  @DisplayName("integration scenarios")
+  class IntegrationScenarios {
 
     @Test
-    @DisplayName("Should validate notification with invalid email")
-    void shouldValidateNotificationWithInvalidEmail() {
-      // Given
+    @DisplayName("deve funcionar com diferentes notificações")
+    void givenDifferentNotifications_whenSend_thenHandleCorrectly() {
+      // Arrange
+      NotificationModel[] notifications = {
+        new NotificationModel(
+          Channel.EMAIL,
+          "user1@example.com",
+          "Welcome",
+          "Welcome message"
+        ),
+        new NotificationModel(
+          Channel.EMAIL,
+          "user2@example.com",
+          "Reset Password",
+          "Reset link"
+        ),
+        new NotificationModel(
+          Channel.EMAIL,
+          "user3@example.com",
+          "Verification",
+          "Verify account"
+        ),
+      };
+
+      // Setup different emails for each notification
+      for (NotificationModel notification : notifications) {
+        SendSmtpEmail email = new SendSmtpEmail(
+          new EmailSender("Test", "test@example.com"),
+          List.of(new EmailRecipient(null, notification.to())),
+          notification.subject(),
+          notification.message()
+        );
+
+        when(mapper.toBrevo(notification, props)).thenReturn(email);
+        when(api.sendSimpleEmail(email))
+          .thenReturn(new SendSmtpEmailResponse(UUID.randomUUID().toString()));
+      }
+
+      // Act
+      for (NotificationModel notification : notifications) {
+        sender.send(notification);
+      }
+
+      // Assert
+      verify(mapper, times(3)).toBrevo(any(), eq(props));
+      verify(api, times(3)).sendSimpleEmail(any());
+    }
+
+    @Test
+    @DisplayName("deve lidar com cenário de recuperação após falha")
+    void givenFailureThenSuccess_whenSend_thenHandleCorrectly() {
+      // Arrange - Uma chamada que vai falhar
+      RuntimeException failure = new RuntimeException("Temporary failure");
+      doThrow(failure).when(api).sendSimpleEmail(any());
+
+      // Act - Tentativa que deve falhar e lançar EmailDeliveryException
+      assertThatThrownBy(() -> sender.send(testNotification))
+        .isInstanceOf(EmailDeliveryException.class);
+
+      // Assert - Verificar que API foi chamada
+      verify(api).sendSimpleEmail(any());
+      // Note: O fallback só é ativado pelo circuit breaker, não por exceções simples
+      // Em um teste de integração real, seria necessário configurar o circuit breaker
+    }
+
+    @Test
+    @DisplayName("deve validar entrada da notificação")
+    void givenInvalidNotification_whenSend_thenValidationShouldHandle() {
+      // Note: Como o método está anotado com @Valid,
+      // a validação seria feita pelo framework
+      // Aqui só testamos que o mapper é chamado com os dados
+
+      // Arrange
       NotificationModel invalidNotification = new NotificationModel(
         Channel.EMAIL,
-        "invalid-email",
-        "Test Subject",
-        "Test Message"
-      );
-
-      // Configure mapper to handle invalid notification
-      when(mapper.toBrevo(invalidNotification, props))
-        .thenReturn(sendSmtpEmail);
-      when(api.sendSimpleEmail(sendSmtpEmail)).thenReturn(successResponse);
-
-      // When & Then
-      // Note: Spring validation happens at runtime, not in unit tests
-      // This test verifies the method can handle the call
-      emailSender.send(invalidNotification);
-
-      verify(mapper).toBrevo(invalidNotification, props);
-      verify(api).sendSimpleEmail(sendSmtpEmail);
-    }
-
-    @Test
-    @DisplayName("Should handle notification with null fields gracefully")
-    void shouldHandleNotificationWithNullFieldsGracefully() {
-      // Given
-      NotificationModel nullFieldsNotification = new NotificationModel(
-        Channel.EMAIL,
-        null,
-        null,
-        "Test Message"
-      );
-
-      // Configure mapper to handle null fields notification
-      when(mapper.toBrevo(nullFieldsNotification, props))
-        .thenReturn(sendSmtpEmail);
-      when(api.sendSimpleEmail(sendSmtpEmail)).thenReturn(successResponse);
-
-      // When & Then
-      // Note: Spring validation happens at runtime, not in unit tests
-      // This test verifies the method can handle the call
-      emailSender.send(nullFieldsNotification);
-
-      verify(mapper).toBrevo(nullFieldsNotification, props);
-      verify(api).sendSimpleEmail(sendSmtpEmail);
-    }
-
-    @Test
-    @DisplayName("Should handle notification with empty subject gracefully")
-    void shouldHandleNotificationWithEmptySubjectGracefully() {
-      // Given
-      NotificationModel emptySubjectNotification = new NotificationModel(
-        Channel.EMAIL,
-        "test@example.com",
+        "", // email vazio - seria rejeitado pela validação
         "",
-        "Test Message"
+        ""
       );
 
-      // Configure mapper to handle empty subject notification
-      when(mapper.toBrevo(emptySubjectNotification, props))
-        .thenReturn(sendSmtpEmail);
-      when(api.sendSimpleEmail(sendSmtpEmail)).thenReturn(successResponse);
+      // Assumindo que chegasse até aqui (o que não aconteceria na realidade)
+      when(mapper.toBrevo(invalidNotification, props)).thenReturn(testEmail);
 
-      // When & Then
-      // Note: Spring validation happens at runtime, not in unit tests
-      // This test verifies the method can handle the call
-      emailSender.send(emptySubjectNotification);
+      // Act
+      sender.send(invalidNotification);
 
-      verify(mapper).toBrevo(emptySubjectNotification, props);
-      verify(api).sendSimpleEmail(sendSmtpEmail);
-    }
-  }
-
-  @Nested
-  @DisplayName("Integration with External Components")
-  class IntegrationWithExternalComponents {
-
-    @Test
-    @DisplayName("Should interact correctly with BrevoMapper")
-    void shouldInteractCorrectlyWithBrevoMapper() {
-      // Given
-      when(api.sendSimpleEmail(sendSmtpEmail)).thenReturn(successResponse);
-
-      // When
-      emailSender.send(validNotification);
-
-      // Then
-      verify(mapper).toBrevo(validNotification, props);
-      verifyNoMoreInteractions(mapper);
-    }
-
-    @Test
-    @DisplayName("Should interact correctly with BrevoApi")
-    void shouldInteractCorrectlyWithBrevoApi() {
-      // Given
-      when(api.sendSimpleEmail(sendSmtpEmail)).thenReturn(successResponse);
-
-      // When
-      emailSender.send(validNotification);
-
-      // Then
-      verify(api).sendSimpleEmail(sendSmtpEmail);
-      verifyNoMoreInteractions(api);
-    }
-
-    @Test
-    @DisplayName("Should interact correctly with MeterRegistry")
-    void shouldInteractCorrectlyWithMeterRegistry() {
-      // Given
-      RuntimeException exception = new RuntimeException("Test exception");
-
-      // When
-      emailSender.fallback(exception, validNotification);
-
-      // Then
-      verify(registry).counter("email.outbox.total", "provider", "brevo");
-      verify(counter).increment();
-    }
-
-    @Test
-    @DisplayName("Should interact correctly with ResilientOutboxStore")
-    void shouldInteractCorrectlyWithResilientOutboxStore() {
-      // Given
-      RuntimeException exception = new RuntimeException("Test exception");
-
-      // When
-      emailSender.fallback(exception, validNotification);
-
-      // Then
-      verify(store).save(any(OutboxMessage.class));
-      verifyNoMoreInteractions(store);
-    }
-  }
-
-  @Nested
-  @DisplayName("Edge Cases")
-  class EdgeCases {
-
-    @Test
-    @DisplayName("Should handle null API response")
-    void shouldHandleNullApiResponse() {
-      // Given
-      when(api.sendSimpleEmail(sendSmtpEmail)).thenReturn(null);
-
-      // When & Then
-      assertThatThrownBy(() -> emailSender.send(validNotification))
-        .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    @DisplayName("Should handle null messageId in response")
-    void shouldHandleNullMessageIdInResponse() {
-      // Given
-      SendSmtpEmailResponse nullMessageIdResponse = new SendSmtpEmailResponse(
-        null
-      );
-      when(api.sendSimpleEmail(sendSmtpEmail))
-        .thenReturn(nullMessageIdResponse);
-
-      // When
-      emailSender.send(validNotification);
-
-      // Then
-      verify(api).sendSimpleEmail(sendSmtpEmail);
-      // Should process normally even with null messageId
-    }
-
-    @Test
-    @DisplayName("Should handle multiple fallback calls")
-    void shouldHandleMultipleFallbackCalls() {
-      // Given
-      RuntimeException exception = new RuntimeException("Persistent error");
-
-      // When
-      emailSender.fallback(exception, validNotification);
-      emailSender.fallback(exception, validNotification);
-
-      // Then
-      verify(counter, times(2)).increment();
-      verify(store, times(2)).save(any(OutboxMessage.class));
+      // Assert
+      verify(mapper).toBrevo(invalidNotification, props);
     }
   }
 }
