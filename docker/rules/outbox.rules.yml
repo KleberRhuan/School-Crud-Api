@@ -1,0 +1,54 @@
+groups:
+  - name: outbox.rules
+    rules:
+      - record: job:outbox_failure_ratio:5m
+        expr: |
+          rate(outbox_operations_total{result="failure"}[5m])
+          /
+          rate(outbox_operations_total[5m])
+
+      - record: job:outbox_latency_95p:5m
+        expr: |
+          histogram_quantile(0.95, 
+            rate(outbox_latency_bucket[5m])
+          )
+
+  - name: outbox.alerts
+    rules:
+      - alert: OutboxHighFailureRate
+        expr: job:outbox_failure_ratio:5m > 0.02
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Falha de Outbox acima de 2% ({{ $value | printf \"%.2f\" }} %)"
+          description: |
+            A taxa de falhas do OutboxStore excedeu 2% nas últimas 5 minutos.
+            Store: {{ $labels.store }}
+            Operação: {{ $labels.op }}
+
+      - alert: OutboxHighLatency
+        expr: job:outbox_latency_95p:5m > 5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latência alta no Outbox ({{ $value | printf \"%.2f\" }}s)"
+          description: |
+            O percentil 95 da latência do OutboxStore excedeu 5 segundos nas últimas 5 minutos.
+            Store: {{ $labels.store }}
+
+      - alert: OutboxNoSuccessfulOperations
+        expr: |
+          increase(outbox_operations_total{result="success"}[10m]) == 0
+          and
+          increase(outbox_operations_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nenhuma operação bem-sucedida no Outbox"
+          description: |
+            Não houve operações bem-sucedidas no OutboxStore nos últimos 10 minutos,
+            mas há tentativas sendo feitas. Isso indica falha completa do sistema.
+            Store: {{ $labels.store }}

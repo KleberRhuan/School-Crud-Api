@@ -1,5 +1,10 @@
 global:
   scrape_interval: 15s
+  
+rule_files:
+  - "rules/outbox.rules.yml"
+    
+    
 scrape_configs:
   - job_name: 'houer-api'
     metrics_path: '/actuator/prometheus'
