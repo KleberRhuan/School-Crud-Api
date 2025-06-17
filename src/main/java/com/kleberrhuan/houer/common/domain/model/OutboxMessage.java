@@ -49,18 +49,16 @@ public class OutboxMessage {
   }
 
   public NotificationModel toNotification() {
-    return NotificationModel
-      .builder()
-      .to(recipient)
-      .subject(subject)
-      .message(body)
-      .channel(channel)
-      .build();
+    return new NotificationModel(channel, recipient, subject, body);
   }
 
   public void fail() {
     this.attempts++;
     long delay = Math.min(60, (int) Math.pow(2, attempts));
-    this.nextAttemptAt = Instant.now().plus(Duration.ofMinutes(delay));
+    Instant candidate = nextAttemptAt.plus(Duration.ofMinutes(delay));
+    if (candidate.isBefore(nextAttemptAt)) {
+      candidate = nextAttemptAt;
+    }
+    this.nextAttemptAt = candidate;
   }
 }

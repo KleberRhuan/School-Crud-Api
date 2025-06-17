@@ -15,11 +15,9 @@ import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.request.SendSmtpE
 import com.kleberrhuan.houer.common.interfaces.dto.email.brevo.response.SendSmtpEmailResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.annotation.Observed;
-import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,15 +34,8 @@ public class BrevoEmailSender implements EmailNotification {
 
   private final BrevoMapper mapper;
   private final BrevoProps props;
-  private final MeterRegistry registry;
   private final ResilientOutboxStore store;
   private final BrevoApi api;
-  private Counter outboxCounter;
-
-  @PostConstruct
-  void init() {
-    outboxCounter = registry.counter("email.outbox.total", "provider", "brevo");
-  }
 
   @Override
   public Provider provider() {
@@ -59,11 +50,11 @@ public class BrevoEmailSender implements EmailNotification {
   public void send(@Valid NotificationModel n) {
     SendSmtpEmail payload = mapper.toBrevo(n, props);
     SendSmtpEmailResponse resp = this.send(payload, provider());
-    log.info("Brevo messageId={}", resp.messageId());
+    log.info("Email sent via brevo: messageId={}", resp.messageId());
   }
 
+  @Counted(value = "email.outbox.total", extraTags = { "provider", "brevo" })
   public void fallback(Throwable ex, NotificationModel n) {
-    outboxCounter.increment();
     store.save(OutboxMessage.create(n));
     log.warn(
       "Email routed to outbox: to={} subject='{}' cause={}",

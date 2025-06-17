@@ -10,8 +10,10 @@ import com.kleberrhuan.houer.common.infra.properties.OutboxResilienceProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
@@ -23,11 +25,11 @@ import org.springframework.stereotype.Component;
 public class InMemoryOutboxStore implements OutboxStore {
 
   private static final String METRIC_QUEUE_SIZE = "outbox.due.queue.size";
-
   private final OutboxResilienceProperties cfg;
   private final MeterRegistry metrics;
   private final BlockingQueue<OutboxMessage> dueMessages =
     new LinkedBlockingQueue<>();
+  private final Set<UUID> dueMessageIds = ConcurrentHashMap.newKeySet();
   private final Cache<UUID, OutboxMessage> messageCache;
 
   public InMemoryOutboxStore(
@@ -52,22 +54,40 @@ public class InMemoryOutboxStore implements OutboxStore {
   }
 
   private void onRemoval(UUID k, OutboxMessage v, RemovalCause cause) {
-    if (v != null && cause == RemovalCause.EXPIRED) dueMessages.offer(v);
+    if (
+      v != null &&
+      (cause == RemovalCause.EXPIRED || cause == RemovalCause.EXPLICIT) &&
+      dueMessageIds.add(v.getId())
+    ) {
+      dueMessages.offer(v);
+    }
   }
 
   @Override
   public void save(OutboxMessage msg) {
+    if (msg.getId() == null) {
+      msg.setId(UUID.randomUUID());
+    }
     messageCache.put(msg.getId(), msg);
   }
 
   @Override
   public Optional<OutboxMessage> pollNextDue() {
-    return Optional.ofNullable(dueMessages.poll());
+    OutboxMessage message = dueMessages.poll();
+    if (message != null) {
+      dueMessageIds.remove(message.getId());
+      return Optional.of(message);
+    }
+    return Optional.empty();
   }
 
   @Override
   public void delete(UUID id) {
+    OutboxMessage v = messageCache.getIfPresent(id);
     messageCache.invalidate(id);
+    if (v != null && dueMessageIds.add(id)) {
+      dueMessages.offer(v);
+    }
   }
 
   @Override

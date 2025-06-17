@@ -9,6 +9,9 @@ import java.util.concurrent.TimeUnit;
 public class OutboxExpiryPolicy implements Expiry<UUID, OutboxMessage> {
 
   private long until(OutboxMessage v) {
+    if (v.getNextAttemptAt() == null) {
+      return 0;
+    }
     long diff =
       v.getNextAttemptAt().toEpochMilli() - System.currentTimeMillis();
     return TimeUnit.MILLISECONDS.toNanos(Math.max(0, diff));

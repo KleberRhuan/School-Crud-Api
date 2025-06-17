@@ -36,7 +36,10 @@ public class AuditEvent {
   private Long id;
 
   private String entity;
-  private Object entityId;
+
+  @Column(name = "entity_id")
+  private String entityId;
+
   private String action;
   private Instant ts;
 

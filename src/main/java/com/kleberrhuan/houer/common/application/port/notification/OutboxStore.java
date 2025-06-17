@@ -26,6 +26,10 @@ public interface OutboxStore {
     return list;
   }
 
+  default boolean isUp() {
+    return health() == StoreHealth.UP;
+  }
+
   enum StoreHealth {
     UP,
     DOWN,
