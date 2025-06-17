@@ -9,12 +9,14 @@ import com.kleberrhuan.houer.auth.interfaces.dto.request.RegisterRequest;
 import com.kleberrhuan.houer.user.application.mapper.UserMapper;
 import com.kleberrhuan.houer.user.domain.model.User;
 import com.kleberrhuan.houer.user.domain.repository.UserRepository;
+import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RegistrationService {
 
   private final UserRepository users;
@@ -30,10 +33,6 @@ public class RegistrationService {
   private final PasswordEncoder encoder;
   private final ApplicationEventPublisher events;
   private final MeterRegistry meter;
-
-  private Counter regOk() {
-    return meter.counter("auth.registration.success");
-  }
 
   private Counter verifyOk() {
     return meter.counter("auth.verification.success");
@@ -48,6 +47,7 @@ public class RegistrationService {
   }
 
   /* ---------------- register ---------------- */
+  @Counted(value = "auth.registration.success")
   @Transactional
   public void register(RegisterRequest dto, String baseUrl) {
     User u = mapper.toEntity(dto, encoder);
@@ -71,7 +71,7 @@ public class RegistrationService {
       )
     );
 
-    regOk().increment();
+    log.info("New user registered: {}", u.getEmail());
   }
 
   /* ---------------- verify ------------------ */
@@ -81,16 +81,19 @@ public class RegistrationService {
       .findByTokenAndUsedFalse(token)
       .orElseThrow(() -> {
         verifyInvalid().increment();
+        log.warn("Invalid verification token: {}", token);
         return AuthException.verificationInvalid();
       });
 
     if (vt.getExpiresAt().isBefore(Instant.now())) {
       verifyExpired().increment();
+      log.error("Expired token: {}", token);
       throw AuthException.verificationExpired();
     }
 
     vt.setUsed(true);
     users.getReferenceById(vt.getUserId()).setEnabled(true);
     verifyOk().increment();
+    log.info("User verification successful: token={}", token);
   }
 }

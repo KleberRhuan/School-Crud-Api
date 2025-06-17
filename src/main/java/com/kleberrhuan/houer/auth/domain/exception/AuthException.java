@@ -79,4 +79,13 @@ public final class AuthException extends ApiException {
       MessageKey.of("error.auth.verification.expired")
     );
   }
+
+  /** Token de reset de senha inválido, expirado ou já usado. */
+  public static AuthException passwordResetTokenInvalid() {
+    return new AuthException(
+      HttpStatus.BAD_REQUEST,
+      ApiErrorType.PASSWORD_RESET_TOKEN_INVALID,
+      MessageKey.of("error.auth.password-reset.token.invalid")
+    );
+  }
 }

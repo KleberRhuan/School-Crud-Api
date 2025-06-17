@@ -12,11 +12,12 @@ import com.kleberrhuan.houer.auth.infra.security.jwt.TokenPair;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.LoginRequest;
 import com.kleberrhuan.houer.user.domain.model.User;
 import com.kleberrhuan.houer.user.domain.repository.UserRepository;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.annotation.Counted;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthenticationService {
 
   private final UserRepository users;
@@ -33,9 +35,9 @@ public class AuthenticationService {
   private final TokenBlockList blockList;
   private final JwtProps props;
   private final JwtParser fastParser;
-  private final MeterRegistry meter;
 
   /* ---------- LOGIN -------------------------------------- */
+  @Counted(value = "auth.login.ok")
   @Transactional
   public TokenPair login(LoginRequest req) {
     User u = users
@@ -49,11 +51,12 @@ public class AuthenticationService {
     if (!u.isEnabled()) throw AuthException.accountNotVerified();
 
     TokenPair pair = issueTokens(u, req.rememberMe());
-    meter.counter("auth.login.ok").increment();
+    log.info("User {} logged in successfully", u.getId());
     return pair;
   }
 
   /* ---------- REFRESH ------------------------------------ */
+  @Counted(value = "auth.refresh.ok")
   @Transactional
   public TokenPair refresh(String refreshJwt) {
     Jwt parsed = fastParser.parse(refreshJwt);
@@ -68,17 +71,19 @@ public class AuthenticationService {
     ) throw AuthException.refreshExpired();
 
     rt.use();
+    refreshTokens.save(rt);
     User u = users.getReferenceById(rt.getUserId());
 
     TokenPair pair = issueTokens(u, true);
-    meter.counter("auth.refresh.ok").increment();
+    log.info("Token refreshed for user {}", u.getId());
     return pair;
   }
 
   /* ---------- LOGOUT ------------------------------------- */
+  @Counted(value = "auth.logout")
   public void logout(String jti) {
     blockList.block(jti);
-    meter.counter("auth.logout").increment();
+    log.info("Logout executed - jti={}", jti);
   }
 
   /* ---------- HELPERS ------------------------------------ */

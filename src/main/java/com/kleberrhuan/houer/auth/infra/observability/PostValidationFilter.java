@@ -1,12 +1,13 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.auth.infra.observability;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.annotation.Counted;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,11 +17,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class PostValidationFilter extends OncePerRequestFilter {
 
-  private final MeterRegistry meter;
-
   @Override
+  @Counted(value = "auth.request.ok")
   protected void doFilterInternal(
     @NotNull HttpServletRequest req,
     @NotNull HttpServletResponse res,
@@ -34,7 +35,7 @@ public class PostValidationFilter extends OncePerRequestFilter {
       if (auth != null) {
         String jti = auth.getToken().getId();
         MDC.put("token_jti", jti);
-        meter.counter("auth.request.ok").increment();
+        log.info("Authenticated request: jti={}", jti);
       }
       chain.doFilter(req, res);
     } finally {
