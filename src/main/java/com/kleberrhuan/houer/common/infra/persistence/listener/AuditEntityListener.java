@@ -76,7 +76,8 @@ public class AuditEntityListener {
 
     /* meta ----------------------------------------------------- */
     ev.setEntity(entity.getClass().getSimpleName());
-    ev.setEntityId(extractId(entity));
+    Object extractedId = extractId(entity);
+    ev.setEntityId(extractedId != null ? String.valueOf(extractedId) : null);
     ev.setAction(action.name());
     ev.setTs(Instant.now());
 

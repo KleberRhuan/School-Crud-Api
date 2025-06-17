@@ -283,7 +283,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<Object> handleUnhandled(Exception ex, WebRequest req) {
-    log.error("Erro não tratado: ", ex);
+    log.error("Unhandled error: ", ex);
 
     Locale locale = LocaleContextHolder.getLocale();
     HttpHeaders headers = new HttpHeaders();

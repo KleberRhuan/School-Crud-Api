@@ -2,7 +2,7 @@
 package com.kleberrhuan.houer.common.infra.web.filter;
 
 import com.kleberrhuan.houer.common.infra.properties.AuditProperties;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.annotation.Timed;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,12 +32,12 @@ import org.springframework.web.util.pattern.PathPatternParser;
 @RequiredArgsConstructor
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
-  private final MeterRegistry registry;
   private final AuditProperties cfg;
   private static final PathPatternParser PARSER =
     PathPatternParser.defaultInstance;
 
   @Override
+  @Timed(value = "http.custom.latency")
   protected void doFilterInternal(
     @NonNull HttpServletRequest req,
     @NonNull HttpServletResponse res,
@@ -73,16 +73,6 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
       long elapsedMs = TimeUnit.NANOSECONDS.toMillis(
         System.nanoTime() - startNanos
       );
-
-      registry
-        .timer(
-          "http.custom.latency",
-          "path",
-          req.getRequestURI(),
-          "status",
-          String.valueOf(p.getStatus())
-        )
-        .record(elapsedMs, TimeUnit.MILLISECONDS);
 
       if (cfg.isLogResponses()) logResponse(r, p, elapsedMs);
       if (needsBody) ((ContentCachingResponseWrapper) p).copyBodyToResponse();
