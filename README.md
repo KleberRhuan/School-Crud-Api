@@ -1,11 +1,13 @@
 # Houer - Sistema de Gestão Escolar
 
 ## 💡 Descrição
+
 Sistema fullstack completo para gestão de instalações escolares com autenticação JWT, upload de arquivos, CRUD de dados e sistema de notificações por email. Desenvolvido com Spring Boot e arquitetura hexagonal.
 
 ## 🚀 Tecnologias
 
 ### Backend
+
 - **Java 21** + **Spring Boot 3.4**
 - **Spring Security** com JWT
 - **PostgreSQL** + **Flyway** (migrações)
@@ -16,11 +18,13 @@ Sistema fullstack completo para gestão de instalações escolares com autentica
 - **Docker** + **Docker Compose**
 
 ### Observabilidade
+
 - **Prometheus** (métricas)
 - **Jaeger** (tracing distribuído)
 - **Logback** (logs estruturados)
 
 ### Arquitetura
+
 - **Hexagonal Architecture** (Ports & Adapters)
 - **Domain-Driven Design** (DDD)
 - **Outbox Pattern** (eventos assíncronos)
@@ -29,6 +33,7 @@ Sistema fullstack completo para gestão de instalações escolares com autentica
 ## 🛠 Como Executar
 
 ### Pré-requisitos
+
 - Docker e Docker Compose
 - Java 21+ (opcional, para desenvolvimento)
 - Maven 3.9+ (opcional, para desenvolvimento)
@@ -97,6 +102,7 @@ HOUER_RESEARCH_URL=http://localhost:8080
 ## 📌 Funcionalidades
 
 ### 🔐 Autenticação & Autorização
+
 - ✅ **Login/Logout** com JWT
 - ✅ **Registro de usuários** com verificação por email
 - ✅ **Refresh tokens** com cookies httpOnly
@@ -105,24 +111,28 @@ HOUER_RESEARCH_URL=http://localhost:8080
 - ✅ **Validação robusta de senhas**
 
 ### 👥 Gestão de Usuários
+
 - ✅ **CRUD completo** de usuários
 - ✅ **Soft delete** com auditoria
 - ✅ **Perfis e permissões**
 - ✅ **Histórico de alterações**
 
 ### 📧 Sistema de Notificações
+
 - ✅ **Outbox pattern** para garantia de entrega
 - ✅ **Templates HTML** para emails
 - ✅ **Retry automático** para falhas
 - ✅ **Integração com Brevo**
 
 ### 📊 Observabilidade
+
 - ✅ **Métricas** com Prometheus
 - ✅ **Tracing distribuído** com Jaeger
 - ✅ **Logs estruturados** com correlação
 - ✅ **Health checks** e actuator
 
 ### 📚 Documentação
+
 - ✅ **Swagger/OpenAPI** completo
 - ✅ **Schemas reutilizáveis**
 - ✅ **Exemplos de requisições**
@@ -158,13 +168,13 @@ Acesse a documentação interativa em: **http://localhost:8080/swagger-ui.html**
 
 ### Principais Endpoints
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `POST` | `/v1/auth/login` | Realizar login |
+| Método |      Endpoint       |     Descrição     |
+|--------|---------------------|-------------------|
+| `POST` | `/v1/auth/login`    | Realizar login    |
 | `POST` | `/v1/auth/register` | Registrar usuário |
-| `GET` | `/v1/auth/verify` | Verificar email |
-| `POST` | `/v1/auth/refresh` | Renovar token |
-| `POST` | `/v1/auth/logout` | Fazer logout |
+| `GET`  | `/v1/auth/verify`   | Verificar email   |
+| `POST` | `/v1/auth/refresh`  | Renovar token     |
+| `POST` | `/v1/auth/logout`   | Fazer logout      |
 
 ## 🏗️ Arquitetura
 
@@ -187,11 +197,14 @@ src/main/java/com/kleberrhuan/houer/
 ## 🧪 Testes
 
 ```bash
-# Executar todos os testes
-./mvnw test
+# Executar todos os testes (falhará caso a cobertura fique abaixo de 80%)
+./mvnw verify
 
-# Executar com coverage
-./mvnw test jacoco:report
+# Gerar relatório HTML de cobertura em target/site/jacoco
+./mvnw verify jacoco:report
+
+# Ajustar cobertura mínima (ex.: 70%)
+./mvnw verify -Djacoco.minimum.coverage=0.70
 ```
 
 ## 🚀 Deploy
@@ -231,4 +244,4 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ---
 
-⭐ **Se este projeto te ajudou, deixe uma estrela!** 
+⭐ **Se este projeto te ajudou, deixe uma estrela!**
