@@ -3,6 +3,7 @@ package com.kleberrhuan.houer.auth.infra.security.config;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
+import com.kleberrhuan.houer.auth.domain.model.Role;
 import com.kleberrhuan.houer.auth.infra.error.ApiErrorAccessDeniedHandler;
 import com.kleberrhuan.houer.auth.infra.error.ApiErrorAuthenticationEntryPoint;
 import com.kleberrhuan.houer.auth.infra.observability.PostValidationFilter;
@@ -14,10 +15,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -33,93 +36,83 @@ public class SecurityConfig {
 
   @Bean
   SecurityFilterChain api(
-    HttpSecurity http,
-    JwtDecoder decoder,
-    JwtToAuthConverter converter,
-    PostValidationFilter postFilter,
-    RateLimitFilter rlFilter,
-    @Qualifier("custom-cors") CorsConfigurationSource cors,
-    ApiErrorAuthenticationEntryPoint entry,
-    ApiErrorAccessDeniedHandler denied
-  ) throws Exception {
+      HttpSecurity http,
+      JwtDecoder decoder,
+      JwtToAuthConverter converter,
+      PostValidationFilter postFilter,
+      RateLimitFilter rlFilter,
+      @Qualifier("custom-cors") CorsConfigurationSource cors,
+      ApiErrorAuthenticationEntryPoint entry,
+      ApiErrorAccessDeniedHandler denied) throws Exception {
     http
-      .authorizeHttpRequests(a ->
-        a
-          .requestMatchers(
-            "/api/v1/auth/login",
-            "/api/v1/auth/refresh",
-            "/api/v1/auth/verify",
-            "/api/v1/auth/register",
-            "/api/v1/auth/password/**",
-            "/swagger-ui.html",
-            "/swagger-ui/**",
-            "/api-docs/**",
-            "/v3/api-docs/**",
-            "/webjars/**"
-          )
-          .permitAll()
-          .anyRequest()
-          .authenticated()
-      )
-      .oauth2ResourceServer(o2 ->
-        o2
-          .jwt(j -> j.decoder(decoder).jwtAuthenticationConverter(converter))
-          .authenticationEntryPoint(entry)
-          .accessDeniedHandler(denied)
-      )
-      .addFilterBefore(rlFilter, BearerTokenAuthenticationFilter.class)
-      .addFilterAfter(postFilter, BearerTokenAuthenticationFilter.class)
-      .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))
-      .headers(headers ->
-        headers
-          .crossOriginOpenerPolicy(coop ->
-            coop.policy(
-              CrossOriginOpenerPolicyHeaderWriter.CrossOriginOpenerPolicy.SAME_ORIGIN
-            )
-          )
-          .frameOptions(frameOptions -> frameOptions.deny())
-          .contentTypeOptions(contentTypeOptions -> {})
-          .httpStrictTransportSecurity(hstsConfig ->
-            hstsConfig
-              .maxAgeInSeconds(31536000)
-              .includeSubDomains(true)
-              .preload(true)
-          )
-          .referrerPolicy(referrerPolicy ->
-            referrerPolicy.policy(
-              org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER
-            )
-          )
-          .addHeaderWriter((request, response) -> {
-            String path = request.getRequestURI();
-            if (path.contains("/auth/") || path.contains("/password/")) {
+        .authorizeHttpRequests(a -> {
+          a.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+          a.requestMatchers(
+              "/api/v1/auth/login",
+              "/api/v1/auth/refresh",
+              "/api/v1/auth/verify",
+              "/api/v1/auth/register",
+              "/api/v1/auth/password/**",
+              "/swagger-ui.html",
+              "/swagger-ui/**",
+              "/api-docs/**",
+              "/v3/api-docs/**",
+              "/webjars/**",
+              "/ws/**",
+              "/ws").permitAll();
+          a.requestMatchers(HttpMethod.GET, "/actuator/**").permitAll();
+          a.requestMatchers(HttpMethod.POST, "/api/v1/schools/**").hasRole(Role.ADMIN.getName());
+          a.requestMatchers(HttpMethod.PUT, "/api/v1/schools/**").hasRole(Role.ADMIN.getName());
+          a.requestMatchers(HttpMethod.DELETE, "/api/v1/schools/**").hasRole(Role.ADMIN.getName());
+          a.requestMatchers("/api/csv/**").hasRole(Role.ADMIN.getName());
+          a.anyRequest()
+              .authenticated();
+        })
+        .oauth2ResourceServer(o2 -> o2
+            .jwt(j -> j.decoder(decoder).jwtAuthenticationConverter(converter))
+            .authenticationEntryPoint(entry)
+            .accessDeniedHandler(denied))
+        .addFilterBefore(rlFilter, BearerTokenAuthenticationFilter.class)
+        .addFilterAfter(postFilter, BearerTokenAuthenticationFilter.class)
+        .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))
+        .headers(headers -> headers
+            .crossOriginOpenerPolicy(coop -> coop.policy(
+                CrossOriginOpenerPolicyHeaderWriter.CrossOriginOpenerPolicy.SAME_ORIGIN))
+            .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+            .contentTypeOptions(contentTypeOptions -> {
+            })
+            .httpStrictTransportSecurity(hstsConfig -> hstsConfig
+                .maxAgeInSeconds(31536000)
+                .includeSubDomains(true)
+                .preload(true))
+            .referrerPolicy(referrerPolicy -> referrerPolicy.policy(
+                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+            .addHeaderWriter((request, response) -> {
+              String path = request.getRequestURI();
+              if (path.contains("/auth/") || path.contains("/password/")) {
+                response.setHeader(
+                    "Cache-Control",
+                    "no-store, no-cache, must-revalidate, private");
+                response.setHeader("Pragma", "no-cache");
+                response.setHeader("Expires", "0");
+              }
+
               response.setHeader(
-                "Cache-Control",
-                "no-store, no-cache, must-revalidate, private"
-              );
-              response.setHeader("Pragma", "no-cache");
-              response.setHeader("Expires", "0");
-            }
+                  "Content-Security-Policy",
+                  "default-src 'self'; " +
+                      "script-src 'self' 'unsafe-inline'; " +
+                      "style-src 'self' 'unsafe-inline'; " +
+                      "img-src 'self' data: https:; " +
+                      "font-src 'self'; " +
+                      "connect-src 'self' ws: wss:; " +
+                      "frame-ancestors 'none'");
 
-            response.setHeader(
-              "Content-Security-Policy",
-              "default-src 'self'; " +
-              "script-src 'self' 'unsafe-inline'; " +
-              "style-src 'self' 'unsafe-inline'; " +
-              "img-src 'self' data: https:; " +
-              "font-src 'self'; " +
-              "connect-src 'self'; " +
-              "frame-ancestors 'none'"
-            );
-
-            response.setHeader(
-              "Permissions-Policy",
-              "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
-            );
-          })
-      )
-      .cors(c -> c.configurationSource(cors))
-      .csrf(AbstractHttpConfigurer::disable);
+              response.setHeader(
+                  "Permissions-Policy",
+                  "geolocation=(), microphone=(), camera=(), payment=(), usb=()");
+            }))
+        .cors(c -> c.configurationSource(cors))
+        .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
 }
