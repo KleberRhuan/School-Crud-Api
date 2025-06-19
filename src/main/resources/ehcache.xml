@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.ehcache.org/v3"
+        xsi:schemaLocation="http://www.ehcache.org/v3 
+                            http://www.ehcache.org/schema/ehcache-core-3.0.xsd">
+
+  <!-- Cache padrão para entidades Hibernate -->
+  <cache-template name="default">
+    <key-type>java.lang.Object</key-type>
+    <value-type>java.lang.Object</value-type>
+    <expiry>
+      <ttl unit="hours">2</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+      <offheap unit="MB">10</offheap>
+    </resources>
+  </cache-template>
+
+  <!-- Cache específico para entidades School -->
+  <cache alias="com.kleberrhuan.houer.school.domain.model.School" uses-template="default">
+    <expiry>
+      <ttl unit="hours">6</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">2000</heap>
+      <offheap unit="MB">20</offheap>
+    </resources>
+  </cache>
+
+  <!-- Cache específico para entidades SchoolMetrics -->
+  <cache alias="com.kleberrhuan.houer.school.domain.model.SchoolMetrics" uses-template="default">
+    <expiry>
+      <ttl unit="hours">6</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">2000</heap>
+      <offheap unit="MB">30</offheap>
+    </resources>
+  </cache>
+
+  <!-- Cache de queries -->
+  <cache alias="default-query-results-region" uses-template="default">
+    <expiry>
+      <ttl unit="minutes">30</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">500</heap>
+      <offheap unit="MB">5</offheap>
+    </resources>
+  </cache>
+
+  <!-- Cache de update timestamps (usado pelo Hibernate) -->
+  <cache alias="default-update-timestamps-region">
+    <key-type>java.lang.Object</key-type>
+    <value-type>java.lang.Object</value-type>
+    <expiry>
+      <none/>
+    </expiry>
+    <resources>
+      <heap unit="entries">10000</heap>
+    </resources>
+  </cache>
+
+</config> 

@@ -1,0 +1,76 @@
+# Configurações específicas do módulo School
+school:
+  cache:
+    catalog:
+      ttl: PT2H
+    page:
+      ttl: PT30M
+      max-size: 1000
+    metrics:
+      ttl: PT12H # 12 horas
+      max-size: 500
+    specifications:
+      ttl: PT2H # 2 horas
+      max-size: 100
+
+# Configurações JPA otimizadas para o módulo School
+spring:
+  jpa:
+    open-in-view: false # Evita N+1 queries lazy
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 50
+          order_inserts: true
+          order_updates: true
+        default_batch_fetch_size: 50
+        cache:
+          use_second_level_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+        generate_statistics: true
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 1000
+
+# Configurações de logging para debug
+logging:
+  level:
+    com.kleberrhuan.houer.school: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: DEBUG
+    org.hibernate.cache: DEBUG
+    org.springframework.cache: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+
+# Configurações de validação
+validation:
+  school:
+    name:
+      max-length: 200
+      required: false
+    municipality:
+      max-length: 100
+    state:
+      abbreviation-length: 2
+    operational-status:
+      valid-values: [1, 2, 3, 4, 5] # Definir conforme regras de negócio
+
+# Configurações de performance
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,cache
+  endpoint:
+    health:
+      show-details: when-authorized
+    cache:
+      enabled: true

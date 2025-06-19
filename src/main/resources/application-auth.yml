@@ -1,0 +1,15 @@
+app:
+  verification:
+    token:
+      expiry-hours: 24
+    url-path: /api/v1/auth/verify
+  password-reset:
+    token:
+      expiry-hours: 2
+    notification:
+      from-email: noreply@houer.com
+      template: password-reset
+  cleanup:
+    enabled: true
+    cron: "0 0 * * * *" # A cada hora no minuto 0
+    batch-size: 1000
