@@ -54,7 +54,7 @@ error:
         persistence:
           detail: "Falha ao persistir mensagem na outbox."
           message: "Não foi possível salvar a mensagem para reenvio."
-        notFound":
+        notFound:
           detail: "Mensagem da outbox não encontrada."
           message: "Não foi possível localizar a mensagem da outbox."
       provider:
@@ -97,3 +97,53 @@ error:
         invalid:
           detail: "Token de redefinição inválido."
           message: "O token de redefinição de senha é inválido, expirado ou já foi utilizado."
+
+  # Mensagens para CSV
+  csv:
+    header:
+      missing:
+        detail: "Colunas obrigatórias ausentes."
+        message: "Colunas obrigatórias ausentes no arquivo {0}: {1}"
+      extra:
+        detail: "Colunas não permitidas."
+        message: "Colunas não permitidas no arquivo {0}: {1}"
+      count:
+        detail: "Quantidade incorreta de colunas."
+        message: "Arquivo {0} tem quantidade incorreta de colunas: {1}"
+      generic:
+        detail: "Erro no cabeçalho do CSV."
+        message: "Erro no cabeçalho do arquivo {0}: {1}"
+    validation:
+      detail: "Erro de validação de CSV."
+      message: "Erro de validação no arquivo CSV: {0}"
+    row:
+      validation:
+        detail: "Erro de validação da linha."
+        message: "Erro de validação na linha {0}: {1}"
+      field:
+        detail: "Erro de validação do campo."
+        message: "Linha {0}, Coluna '{1}': {2}"
+    import:
+      job:
+        active:
+          detail: "Job de importação ativo."
+          message: "Já existe um job de importação ativo para este usuário"
+        not:
+          found:
+            detail: "Job de importação não encontrado."
+            message: "Job de importação não encontrado com o ID: {0}"
+        unauthorized:
+          detail: "Acesso negado ao job de importação."
+          message: "Usuário não tem permissão para acessar este job de importação"
+        already:
+          finished:
+            detail: "Job de importação já finalizado."
+            message: "Este job de importação já foi finalizado e não pode ser modificado"
+    processing:
+      detail: "Erro no processamento do CSV."
+      message: "Erro ao processar arquivo CSV: {0}"
+
+  # Mensagem para RabbitMQ
+  rabbitmq:
+    detail: "Erro de comunicação com RabbitMQ."
+    message: "Falha na comunicação com o sistema de mensageria: {0}"

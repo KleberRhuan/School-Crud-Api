@@ -70,7 +70,43 @@ spring:
 
   docker:
     compose:
-      enabled: true
+      enabled: false
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          max-attempts: 3
+          max-interval: 10000ms
+          multiplier: 2.0
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-attempts: 3
+        max-interval: 10000ms
+        multiplier: 2.0
+
+  # Spring Batch Configuration
+  batch:
+    job:
+      enabled: false # Desabilita auto-start de jobs
+    jdbc:
+      initialize-schema: always
+      table-prefix: BATCH_
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 springdoc:
   api-docs:
@@ -119,6 +155,13 @@ auth:
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
 
+  # Configurações de armazenamento CSV
+  csv:
+    storage:
+      base-dir: ${CSV_STORAGE_BASE_DIR:uploads/csv}
+      create-directories: ${CSV_STORAGE_CREATE_DIRS:true}
+      delete-after-processing: ${CSV_STORAGE_DELETE_AFTER_PROCESSING:true}
+
   notification:
     provider:
       email: brevo
@@ -127,13 +170,14 @@ app:
     cache-seconds: 3600
     fallback-to-system-locale: true
   outbox:
+    backoff: 30s
     retry-interval: 60s
   # Configurações de notificação
   brevo:
     api-key: ${BREVO_API_KEY}
     name: ${BREVO_NAME:Houer Test}
     email: ${BREVO_EMAIL:noreply@kleberrhuan.dev}
-    url: ${BREVO_URL:https://kleberrhuan.dev}
+    url: ${BREVO_URL:https://api.brevo.com/v3 }
     connect-timeout: 3 #(Segundos)
     read-timeout: 5 #(Segundos)
 
@@ -191,6 +235,30 @@ app:
     sensitive-headers: ${AUDIT_SENSITIVE_HEADERS:Authorization,Cookie,X-API-Key,X-Auth-Token}
     ignored-paths: ${AUDIT_IGNORED_PATHS:/actuator/**,/swagger-ui/**,/api-docs/**}
 
+# School Import Configuration
+school:
+  import:
+    batch:
+      chunk-size: ${SCHOOL_IMPORT_CHUNK_SIZE:1000}
+      thread-count: ${SCHOOL_IMPORT_THREAD_COUNT:4}
+      max-retry-attempts: ${SCHOOL_IMPORT_MAX_RETRY:3}
+    rabbitmq:
+      queue:
+        csv-import: ${SCHOOL_CSV_IMPORT_QUEUE:school.csv.import}
+        csv-notification: ${SCHOOL_CSV_NOTIFICATION_QUEUE:school.csv.notification}
+      exchange:
+        csv-import: ${SCHOOL_CSV_IMPORT_EXCHANGE:school.csv.import.exchange}
+        csv-notification: ${SCHOOL_CSV_NOTIFICATION_EXCHANGE:school.csv.notification.exchange}
+      routing-key:
+        csv-import: ${SCHOOL_CSV_IMPORT_ROUTING_KEY:school.csv.import.route}
+        csv-notification: ${SCHOOL_CSV_NOTIFICATION_ROUTING_KEY:school.csv.notification.route}
+    validation:
+      max-file-size: ${SCHOOL_CSV_MAX_FILE_SIZE:10MB}
+      allowed-extensions: ${SCHOOL_CSV_ALLOWED_EXTENSIONS:csv}
+    websocket:
+      endpoint: ${SCHOOL_WEBSOCKET_ENDPOINT:/ws/school-import}
+      allowed-origins: ${SCHOOL_WEBSOCKET_ALLOWED_ORIGINS:*}
+
 # Configurações do servidor
 server:
   port: ${SERVER_PORT:8080}
@@ -220,6 +288,9 @@ management:
     web:
       exposure:
         include: health, info, metrics, prometheus
+  observations:
+    annotations:
+      enabled: true
   metrics:
     enable:
       "email.brevo.duration": true
@@ -251,5 +322,14 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 15s
 
+# Configurações do Outbox Pattern
 outbox:
   backoff: 30s
+
+# Logging Configuration
+logging:
+  level:
+    com.kleberrhuan.houer.school: ${SCHOOL_LOG_LEVEL:INFO}
+    org.springframework.batch: ${BATCH_LOG_LEVEL:WARN}
+    org.springframework.amqp: ${RABBITMQ_LOG_LEVEL:WARN}
+    org.springframework.web.socket: ${WEBSOCKET_LOG_LEVEL:WARN}

@@ -7,12 +7,19 @@
     <conversionRule conversionWord="clr"
                     class="org.springframework.boot.logging.logback.ColorConverter"/>
     
+    <!-- Custom converter for concise exceptions -->
+    <conversionRule conversionWord="shortEx"
+                    class="com.kleberrhuan.houer.common.infra.logging.ConciseThrowableConverter"/>
+    
     <property name="LOG_PATH"    value="logs"/>
     <property name="LOG_ARCHIVE" value="${LOG_PATH}/archive"/>
     
+    <!-- Filter to reduce noise from HTTP headers and framework internals -->
+    <filter class="com.kleberrhuan.houer.common.infra.logging.NoiseReductionFilter"/>
+    
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder charset="UTF-8">
-            <pattern>%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%X{requestId:-no-req}]){yellow} %clr(%logger{36}){cyan} : %m%n%wEx</pattern>
+            <pattern>%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%X{requestId:-no-req}]){yellow} %clr(%logger{36}){cyan} : %m%n%shortEx{3}</pattern>
         </encoder>
     </appender>
     
@@ -27,10 +34,21 @@
 
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"service":"houer"}</customFields>
+            
+            <!-- Exclude noisy HTTP headers from JSON logs -->
+            <excludeMdcKeyName>headers</excludeMdcKeyName>
+            <excludeMdcKeyName>user-agent</excludeMdcKeyName>
+            <excludeMdcKeyName>accept</excludeMdcKeyName>
+            <excludeMdcKeyName>accept-encoding</excludeMdcKeyName>
+            <excludeMdcKeyName>accept-language</excludeMdcKeyName>
+            <excludeMdcKeyName>cookie</excludeMdcKeyName>
+            <excludeMdcKeyName>referer</excludeMdcKeyName>
 
             <mdc>          
                 <includeMdcKeyName>requestId</includeMdcKeyName>
                 <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>jobId</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
             </mdc>
         </encoder>
     </appender>
@@ -39,6 +57,22 @@
         <queueSize>1024</queueSize>
         <appender-ref ref="FILE"/>
     </appender>
+    
+    <!-- Reduce noise from Spring framework components -->
+    <logger name="org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor" level="WARN"/>
+    <logger name="org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor" level="WARN"/>
+    <logger name="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping" level="WARN"/>
+    <logger name="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping" level="WARN"/>
+    <logger name="org.springframework.security.web.FilterChainProxy" level="WARN"/>
+    <logger name="org.springframework.security.web.access.intercept.FilterSecurityInterceptor" level="WARN"/>
+    <logger name="org.springframework.batch.core.step.tasklet.TaskletStep" level="WARN"/>
+    <logger name="org.springframework.batch.core.step.AbstractStep" level="WARN"/>
+    <logger name="org.springframework.batch.repeat.support.RepeatTemplate" level="WARN"/>
+    
+    <!-- Business logic loggers at INFO level -->
+    <logger name="com.kleberrhuan.houer.csv" level="INFO"/>
+    <logger name="com.kleberrhuan.houer.school" level="INFO"/>
+    <logger name="com.kleberrhuan.houer.auth" level="INFO"/>
     
     <springProfile name="dev">
         <root level="INFO">
