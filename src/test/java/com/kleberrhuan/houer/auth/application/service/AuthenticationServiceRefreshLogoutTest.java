@@ -5,20 +5,15 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.kleberrhuan.houer.auth.application.port.jwt.TokenBlockList;
+import com.kleberrhuan.houer.auth.application.factory.TokenFactory;
 import com.kleberrhuan.houer.auth.domain.exception.AuthException;
 import com.kleberrhuan.houer.auth.domain.model.RefreshToken;
-import com.kleberrhuan.houer.auth.domain.repository.RefreshTokenRepository;
-import com.kleberrhuan.houer.auth.infra.properties.JwtProps;
-import com.kleberrhuan.houer.auth.infra.security.jwt.JwtParser;
-import com.kleberrhuan.houer.auth.infra.security.jwt.JwtTokenProvider;
+import com.kleberrhuan.houer.auth.domain.service.CredentialValidationService;
+import com.kleberrhuan.houer.auth.domain.service.RefreshTokenDomainService;
 import com.kleberrhuan.houer.auth.infra.security.jwt.TokenPair;
+import com.kleberrhuan.houer.user.application.mapper.UserMapper;
 import com.kleberrhuan.houer.user.domain.model.User;
 import com.kleberrhuan.houer.user.domain.repository.UserRepository;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,8 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthenticationService - Refresh and Logout Operations")
@@ -40,49 +33,34 @@ class AuthenticationServiceRefreshLogoutTest {
   private UserRepository userRepository;
 
   @Mock
-  private RefreshTokenRepository refreshTokenRepository;
+  private CredentialValidationService credentialValidationService;
 
   @Mock
-  private PasswordEncoder passwordEncoder;
+  private RefreshTokenDomainService refreshTokenDomainService;
 
   @Mock
-  private JwtTokenProvider jwtTokenProvider;
+  private TokenFactory tokenFactory;
 
   @Mock
-  private JwtParser jwtParser;
+  private UserMapper userMapper;
 
   @Mock
-  private TokenBlockList tokenBlockList;
+  private TokenManagementService tokenManagementService;
 
   private AuthenticationService authService;
-  private JwtProps jwtProps;
   private User testUser;
   private RefreshToken testRefreshToken;
 
   @BeforeEach
   void setup() throws Exception {
-    // Gera chaves RSA fake apenas para preencher JwtProps
-    KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-    gen.initialize(2048);
-    KeyPair kp = gen.generateKeyPair();
-    jwtProps =
-      new JwtProps(
-        "testIssuer",
-        900L,
-        86_400L,
-        (RSAPublicKey) kp.getPublic(),
-        (RSAPrivateKey) kp.getPrivate()
-      );
-
     authService =
       new AuthenticationService(
         userRepository,
-        refreshTokenRepository,
-        passwordEncoder,
-        jwtTokenProvider,
-        tokenBlockList,
-        jwtProps,
-        jwtParser
+        userMapper,
+        credentialValidationService,
+        refreshTokenDomainService,
+        tokenFactory,
+        tokenManagementService
       );
 
     testUser = new User();
@@ -110,18 +88,18 @@ class AuthenticationServiceRefreshLogoutTest {
       String refreshJwt = "valid.jwt.format";
       String newAccessToken = "new.access.token";
       String newRefreshToken = "new.refresh.token";
+      TokenPair expectedTokenPair = new TokenPair(
+        newAccessToken,
+        Optional.of(newRefreshToken),
+        900L
+      );
 
-      Jwt parsedJwt = createMockJwt(testRefreshToken.getSeries().toString());
-
-      when(jwtParser.parse(refreshJwt)).thenReturn(parsedJwt);
-      when(refreshTokenRepository.findById(testRefreshToken.getSeries()))
-        .thenReturn(Optional.of(testRefreshToken));
+      when(refreshTokenDomainService.findAndValidateRefreshToken(refreshJwt))
+        .thenReturn(testRefreshToken);
       when(userRepository.getReferenceById(testUser.getId()))
         .thenReturn(testUser);
-      when(jwtTokenProvider.accessToken(eq(testUser), any(String.class)))
-        .thenReturn(newAccessToken);
-      when(jwtTokenProvider.refreshToken(eq(testUser), any(UUID.class)))
-        .thenReturn(newRefreshToken);
+      when(tokenFactory.createTokenPair(testUser, true))
+        .thenReturn(expectedTokenPair);
 
       // Act
       TokenPair result = authService.refresh(refreshJwt);
@@ -130,16 +108,10 @@ class AuthenticationServiceRefreshLogoutTest {
       assertThat(result.access()).isEqualTo(newAccessToken);
       assertThat(result.refresh()).hasValue(newRefreshToken);
 
-      verify(jwtParser).parse(refreshJwt);
-      verify(refreshTokenRepository).findById(testRefreshToken.getSeries());
+      verify(refreshTokenDomainService).findAndValidateRefreshToken(refreshJwt);
+      verify(refreshTokenDomainService).markTokenAsUsed(testRefreshToken);
       verify(userRepository).getReferenceById(testUser.getId());
-      verify(jwtTokenProvider).accessToken(eq(testUser), any(String.class));
-      verify(jwtTokenProvider).refreshToken(eq(testUser), any(UUID.class));
-
-      // Verify that old refresh token is marked as used
-      verify(refreshTokenRepository, times(2)).save(any(RefreshToken.class));
-      verify(refreshTokenRepository)
-        .save(argThat(savedToken -> savedToken.isUsed()));
+      verify(tokenFactory).createTokenPair(testUser, true);
     }
 
     @Test
@@ -147,19 +119,17 @@ class AuthenticationServiceRefreshLogoutTest {
     void givenNonExistentRefreshToken_whenRefresh_thenThrowAuthException() {
       // Arrange
       String refreshJwt = "valid.jwt.format";
-      UUID nonExistentSeries = UUID.randomUUID();
 
-      Jwt parsedJwt = createMockJwt(nonExistentSeries.toString());
-      when(jwtParser.parse(refreshJwt)).thenReturn(parsedJwt);
-      when(refreshTokenRepository.findById(nonExistentSeries))
-        .thenReturn(Optional.empty());
+      when(refreshTokenDomainService.findAndValidateRefreshToken(refreshJwt))
+        .thenThrow(AuthException.refreshNotFound());
 
       // Act & Assert
       assertThatThrownBy(() -> authService.refresh(refreshJwt))
         .isInstanceOf(AuthException.class);
 
-      verify(refreshTokenRepository).findById(nonExistentSeries);
-      verifyNoInteractions(userRepository, jwtTokenProvider);
+      verify(refreshTokenDomainService).findAndValidateRefreshToken(refreshJwt);
+      verifyNoInteractions(userRepository, tokenFactory);
+      verify(refreshTokenDomainService, never()).markTokenAsUsed(any());
     }
 
     @Test
@@ -167,25 +137,17 @@ class AuthenticationServiceRefreshLogoutTest {
     void givenUsedRefreshToken_whenRefresh_thenThrowAuthException() {
       // Arrange
       String refreshJwt = "valid.jwt.format";
-      RefreshToken usedToken = RefreshToken
-        .builder()
-        .series(UUID.randomUUID())
-        .userId(testUser.getId())
-        .expiresAt(Instant.now().plusSeconds(604800))
-        .used(true) // Mark as already used
-        .build();
 
-      Jwt parsedJwt = createMockJwt(usedToken.getSeries().toString());
-      when(jwtParser.parse(refreshJwt)).thenReturn(parsedJwt);
-      when(refreshTokenRepository.findById(usedToken.getSeries()))
-        .thenReturn(Optional.of(usedToken));
+      when(refreshTokenDomainService.findAndValidateRefreshToken(refreshJwt))
+        .thenThrow(AuthException.refreshExpired());
 
       // Act & Assert
       assertThatThrownBy(() -> authService.refresh(refreshJwt))
         .isInstanceOf(AuthException.class);
 
-      verify(refreshTokenRepository).findById(usedToken.getSeries());
-      verifyNoInteractions(userRepository, jwtTokenProvider);
+      verify(refreshTokenDomainService).findAndValidateRefreshToken(refreshJwt);
+      verifyNoInteractions(userRepository, tokenFactory);
+      verify(refreshTokenDomainService, never()).markTokenAsUsed(any());
     }
 
     @Test
@@ -193,25 +155,17 @@ class AuthenticationServiceRefreshLogoutTest {
     void givenExpiredRefreshToken_whenRefresh_thenThrowAuthException() {
       // Arrange
       String refreshJwt = "valid.jwt.format";
-      RefreshToken expiredToken = RefreshToken
-        .builder()
-        .series(UUID.randomUUID())
-        .userId(testUser.getId())
-        .expiresAt(Instant.now().minusSeconds(3600)) // Expired 1 hour ago
-        .used(false)
-        .build();
 
-      Jwt parsedJwt = createMockJwt(expiredToken.getSeries().toString());
-      when(jwtParser.parse(refreshJwt)).thenReturn(parsedJwt);
-      when(refreshTokenRepository.findById(expiredToken.getSeries()))
-        .thenReturn(Optional.of(expiredToken));
+      when(refreshTokenDomainService.findAndValidateRefreshToken(refreshJwt))
+        .thenThrow(AuthException.refreshExpired());
 
       // Act & Assert
       assertThatThrownBy(() -> authService.refresh(refreshJwt))
         .isInstanceOf(AuthException.class);
 
-      verify(refreshTokenRepository).findById(expiredToken.getSeries());
-      verifyNoInteractions(userRepository, jwtTokenProvider);
+      verify(refreshTokenDomainService).findAndValidateRefreshToken(refreshJwt);
+      verifyNoInteractions(userRepository, tokenFactory);
+      verify(refreshTokenDomainService, never()).markTokenAsUsed(any());
     }
 
     @Test
@@ -220,19 +174,17 @@ class AuthenticationServiceRefreshLogoutTest {
       // Arrange
       String malformedJwt = "malformed.jwt";
 
-      when(jwtParser.parse(malformedJwt))
+      when(refreshTokenDomainService.findAndValidateRefreshToken(malformedJwt))
         .thenThrow(AuthException.malformedToken());
 
       // Act & Assert
       assertThatThrownBy(() -> authService.refresh(malformedJwt))
         .isInstanceOf(AuthException.class);
 
-      verify(jwtParser).parse(malformedJwt);
-      verifyNoInteractions(
-        refreshTokenRepository,
-        userRepository,
-        jwtTokenProvider
-      );
+      verify(refreshTokenDomainService)
+        .findAndValidateRefreshToken(malformedJwt);
+      verifyNoInteractions(userRepository, tokenFactory);
+      verify(refreshTokenDomainService, never()).markTokenAsUsed(any());
     }
   }
 
@@ -250,7 +202,7 @@ class AuthenticationServiceRefreshLogoutTest {
       authService.logout(jti);
 
       // Assert
-      verify(tokenBlockList).block(jti);
+      verify(tokenManagementService).blockToken(jti);
     }
 
     @Test
@@ -259,7 +211,7 @@ class AuthenticationServiceRefreshLogoutTest {
       // Act & Assert - Should not throw exception
       assertThatCode(() -> authService.logout(null)).doesNotThrowAnyException();
 
-      verify(tokenBlockList).block(null);
+      verify(tokenManagementService).blockToken(null);
     }
 
     @Test
@@ -272,21 +224,21 @@ class AuthenticationServiceRefreshLogoutTest {
       assertThatCode(() -> authService.logout(emptyJti))
         .doesNotThrowAnyException();
 
-      verify(tokenBlockList).block(emptyJti);
+      verify(tokenManagementService).blockToken(emptyJti);
     }
 
     @Test
     @DisplayName("deve lidar graciosamente com logout múltiplo do mesmo JTI")
     void givenSameJti_whenLogoutMultipleTimes_thenHandleGracefully() {
       // Arrange
-      String jti = "same-jti-123";
+      String jti = "duplicate-jti";
 
       // Act
       authService.logout(jti);
       authService.logout(jti);
 
       // Assert
-      verify(tokenBlockList, times(2)).block(jti);
+      verify(tokenManagementService, times(2)).blockToken(jti);
     }
 
     @Test
@@ -303,20 +255,9 @@ class AuthenticationServiceRefreshLogoutTest {
       authService.logout(jti3);
 
       // Assert
-      verify(tokenBlockList).block(jti1);
-      verify(tokenBlockList).block(jti2);
-      verify(tokenBlockList).block(jti3);
+      verify(tokenManagementService).blockToken(jti1);
+      verify(tokenManagementService).blockToken(jti2);
+      verify(tokenManagementService).blockToken(jti3);
     }
-  }
-
-  private Jwt createMockJwt(String jti) {
-    return Jwt
-      .withTokenValue("token")
-      .header("alg", "RS256")
-      .claim("jti", jti)
-      .subject("user@example.com")
-      .claim("iat", Instant.now())
-      .claim("exp", Instant.now().plusSeconds(3600))
-      .build();
   }
 }

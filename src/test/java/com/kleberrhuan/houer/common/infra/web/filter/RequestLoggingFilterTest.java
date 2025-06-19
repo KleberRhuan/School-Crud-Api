@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.kleberrhuan.houer.common.infra.properties.AuditProperties;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +29,9 @@ class RequestLoggingFilterTest {
     auditProps.setLogResponseBody(true);
     auditProps.setIgnoredPaths(java.util.List.of("/ignore/**"));
 
-    filter = new RequestLoggingFilter(auditProps);
+    SimpleMeterRegistry registry = new SimpleMeterRegistry();
+    filter = new RequestLoggingFilter(auditProps, registry);
+    filter.afterPropertiesSet();
   }
 
   @Test

@@ -1,0 +1,75 @@
+# Configurações específicas para testes
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;INIT=CREATE SCHEMA IF NOT EXISTS auth\;CREATE SCHEMA IF NOT EXISTS school\;CREATE SCHEMA IF NOT EXISTS csv
+    username: sa
+    password:
+    hikari:
+      connection-timeout: 5000
+      idle-timeout: 60000
+      max-lifetime: 300000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      pool-name: TestHikariCP
+
+  # JPA configuração para testes
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+        default_schema: PUBLIC
+
+  # Desabilitar funcionalidades desnecessárias para testes
+  flyway:
+    enabled: false
+
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: never
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        enabled: false
+
+  # Configurações específicas de teste
+  h2:
+    console:
+      enabled: false
+
+# Configurações de logging para testes
+logging:
+  level:
+    com.kleberrhuan.houer: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+
+# Desabilitar métricas para testes
+management:
+  endpoints:
+    enabled-by-default: false
+  prometheus:
+    metrics:
+      export:
+        enabled: false
+
+# Configurações de CSV para testes
+app:
+  csv:
+    max-file-size: 10MB
+    import:
+      batch-size: 100
+      thread-pool-size: 2

@@ -41,4 +41,21 @@ class TracingAspectTest {
     assertThatThrownBy(() -> aspect.profile(pjp))
       .isInstanceOf(IllegalStateException.class);
   }
+
+  @Test
+  @DisplayName("deve funcionar com tempo de execução muito baixo")
+  void shouldHandleLowExecutionTime() throws Throwable {
+    TracingAspect aspect = new TracingAspect();
+    ProceedingJoinPoint pjp = mock(ProceedingJoinPoint.class);
+    when(pjp.proceed()).thenReturn("fast");
+
+    Signature sig = mock(Signature.class);
+    when(sig.toShortString()).thenReturn("FastSvc.quickMethod()");
+    when(pjp.getSignature()).thenReturn(sig);
+
+    Object result = aspect.profile(pjp);
+
+    assertThat(result).isEqualTo("fast");
+    verify(pjp).proceed();
+  }
 }

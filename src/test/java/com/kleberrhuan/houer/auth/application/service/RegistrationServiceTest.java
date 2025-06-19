@@ -4,10 +4,11 @@ package com.kleberrhuan.houer.auth.application.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.kleberrhuan.houer.auth.domain.event.UserRegisteredEvent;
+import com.kleberrhuan.houer.auth.application.factory.VerificationTokenFactory;
 import com.kleberrhuan.houer.auth.domain.exception.AuthException;
 import com.kleberrhuan.houer.auth.domain.model.VerificationToken;
 import com.kleberrhuan.houer.auth.domain.repository.VerificationTokenRepository;
+import com.kleberrhuan.houer.auth.domain.service.VerificationTokenDomainService;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.RegisterRequest;
 import com.kleberrhuan.houer.user.application.mapper.UserMapper;
 import com.kleberrhuan.houer.user.domain.model.User;
@@ -16,20 +17,17 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,19 +36,28 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class RegistrationServiceTest {
 
   @Mock
-  private UserRepository users;
+  private UserRepository userRepository;
 
   @Mock
-  private VerificationTokenRepository vtRepo;
+  private VerificationTokenRepository verificationTokenRepository;
 
   @Mock
-  private UserMapper mapper;
+  private UserMapper userMapper;
 
   @Mock
-  private PasswordEncoder encoder;
+  private PasswordEncoder passwordEncoder;
 
   @Mock
-  private ApplicationEventPublisher events;
+  private VerificationTokenFactory tokenFactory;
+
+  @Mock
+  private VerificationTokenDomainService tokenDomainService;
+
+  @Mock
+  private UserVerificationService userVerificationService;
+
+  @Mock
+  private NotificationService notificationService;
 
   @Mock
   private MeterRegistry meter;
@@ -89,45 +96,33 @@ class RegistrationServiceTest {
       // Given
       RegisterRequest request = dummyRequest();
       User user = dummyUser();
+      VerificationToken token = new VerificationToken(
+        UUID.randomUUID(),
+        user.getId(),
+        Instant.now().plus(1, ChronoUnit.HOURS),
+        false
+      );
       String baseUrl = "http://localhost:8080";
 
-      when(mapper.toEntity(request, encoder)).thenReturn(user);
-      when(users.save(user)).thenReturn(user);
+      when(userMapper.toEntity(request, passwordEncoder)).thenReturn(user);
+      when(userRepository.save(user)).thenReturn(user);
+      when(tokenFactory.createForUser(user.getId())).thenReturn(token);
+      when(verificationTokenRepository.save(token)).thenReturn(token);
 
       // When
       service.register(request, baseUrl);
 
       // Then
-      verify(users).save(user);
-      verify(vtRepo).save(any(VerificationToken.class));
-      verify(events).publishEvent(any(UserRegisteredEvent.class));
-
-      // Verify verification token is created correctly
-      ArgumentCaptor<VerificationToken> tokenCaptor = ArgumentCaptor.forClass(
-        VerificationToken.class
-      );
-      verify(vtRepo).save(tokenCaptor.capture());
-      VerificationToken savedToken = tokenCaptor.getValue();
-
-      assertThat(savedToken.getToken()).isNotNull();
-      assertThat(savedToken.getUserId()).isEqualTo(user.getId());
-      assertThat(savedToken.getExpiresAt())
-        .isAfter(Instant.now())
-        .isBefore(Instant.now().plus(25, ChronoUnit.HOURS)); // Allow margin
-      assertThat(savedToken.isUsed()).isFalse();
-
-      // Verify event is published correctly
-      ArgumentCaptor<UserRegisteredEvent> eventCaptor = ArgumentCaptor.forClass(
-        UserRegisteredEvent.class
-      );
-      verify(events).publishEvent(eventCaptor.capture());
-      UserRegisteredEvent publishedEvent = eventCaptor.getValue();
-
-      assertThat(publishedEvent.email()).isEqualTo(user.getEmail());
-      assertThat(publishedEvent.name()).isEqualTo(user.getName());
-      assertThat(publishedEvent.verifyLink())
-        .startsWith(baseUrl + "/auth/verify?token=")
-        .contains(savedToken.getToken().toString());
+      verify(userRepository).save(user);
+      verify(tokenFactory).createForUser(user.getId());
+      verify(verificationTokenRepository).save(token);
+      verify(notificationService)
+        .publishUserRegisteredEvent(
+          user.getEmail(),
+          user.getName(),
+          baseUrl,
+          token.getToken()
+        );
     }
 
     @Test
@@ -137,7 +132,7 @@ class RegistrationServiceTest {
       RegisterRequest request = dummyRequest();
       String baseUrl = "http://localhost:8080";
 
-      when(mapper.toEntity(request, encoder))
+      when(userMapper.toEntity(request, passwordEncoder))
         .thenThrow(new RuntimeException("Mapping failed"));
 
       // When & Then
@@ -145,9 +140,16 @@ class RegistrationServiceTest {
         .isInstanceOf(RuntimeException.class)
         .hasMessage("Mapping failed");
 
-      verify(users, never()).save(any(User.class));
-      verify(vtRepo, never()).save(any(VerificationToken.class));
-      verify(events, never()).publishEvent(any(UserRegisteredEvent.class));
+      verify(userRepository, never()).save(any(User.class));
+      verify(verificationTokenRepository, never())
+        .save(any(VerificationToken.class));
+      verify(notificationService, never())
+        .publishUserRegisteredEvent(
+          anyString(),
+          anyString(),
+          anyString(),
+          any(UUID.class)
+        );
     }
 
     @Test
@@ -158,16 +160,25 @@ class RegistrationServiceTest {
       User user = dummyUser();
       String baseUrl = "http://localhost:8080";
 
-      when(mapper.toEntity(request, encoder)).thenReturn(user);
-      when(users.save(user)).thenThrow(new RuntimeException("Database error"));
+      when(userMapper.toEntity(request, passwordEncoder)).thenReturn(user);
+      when(userRepository.save(user))
+        .thenThrow(new RuntimeException("Database error"));
 
       // When & Then
       assertThatThrownBy(() -> service.register(request, baseUrl))
         .isInstanceOf(RuntimeException.class)
         .hasMessage("Database error");
 
-      verify(vtRepo, never()).save(any(VerificationToken.class));
-      verify(events, never()).publishEvent(any(UserRegisteredEvent.class));
+      verify(tokenFactory, never()).createForUser(anyLong());
+      verify(verificationTokenRepository, never())
+        .save(any(VerificationToken.class));
+      verify(notificationService, never())
+        .publishUserRegisteredEvent(
+          anyString(),
+          anyString(),
+          anyString(),
+          any(UUID.class)
+        );
     }
   }
 
@@ -188,16 +199,19 @@ class RegistrationServiceTest {
         false
       );
 
-      when(vtRepo.findByTokenAndUsedFalse(token)).thenReturn(Optional.of(vt));
-      when(users.getReferenceById(user.getId())).thenReturn(user);
+      when(tokenDomainService.findValidToken(token)).thenReturn(vt);
+      when(userVerificationService.findUserForVerification(user.getId(), token))
+        .thenReturn(user);
 
       // When
       service.verify(token);
 
       // Then
-      assertThat(vt.isUsed()).isTrue();
-      assertThat(user.isEnabled()).isTrue();
-      verify(counter).increment();
+      verify(tokenDomainService).findValidToken(token);
+      verify(userVerificationService)
+        .findUserForVerification(user.getId(), token);
+      verify(userVerificationService).enableUser(user, token);
+      verify(tokenDomainService).markTokenAsUsed(vt);
     }
 
     @Test
@@ -205,18 +219,16 @@ class RegistrationServiceTest {
     void givenTokenNotFound_whenVerify_thenThrowException() {
       // Given
       UUID token = UUID.randomUUID();
-      Counter invalidCounter = mock(Counter.class);
 
-      when(vtRepo.findByTokenAndUsedFalse(token)).thenReturn(Optional.empty());
-      when(meter.counter("auth.verification.invalid"))
-        .thenReturn(invalidCounter);
+      when(tokenDomainService.findValidToken(token))
+        .thenThrow(AuthException.verificationInvalid());
 
       // When & Then
       assertThatThrownBy(() -> service.verify(token))
         .isInstanceOf(AuthException.class);
 
-      verify(invalidCounter).increment();
-      verify(users, never()).getReferenceById(anyLong());
+      verify(tokenDomainService).findValidToken(token);
+      verifyNoInteractions(userVerificationService);
     }
 
     @Test
@@ -224,25 +236,16 @@ class RegistrationServiceTest {
     void givenExpiredToken_whenVerify_thenThrowException() {
       // Given
       UUID token = UUID.randomUUID();
-      VerificationToken vt = new VerificationToken(
-        token,
-        1L,
-        Instant.now().minus(1, ChronoUnit.HOURS), // Expired
-        false
-      );
-      Counter expiredCounter = mock(Counter.class);
 
-      when(vtRepo.findByTokenAndUsedFalse(token)).thenReturn(Optional.of(vt));
-      when(meter.counter("auth.verification.expired"))
-        .thenReturn(expiredCounter);
+      when(tokenDomainService.findValidToken(token))
+        .thenThrow(AuthException.verificationExpired());
 
       // When & Then
       assertThatThrownBy(() -> service.verify(token))
         .isInstanceOf(AuthException.class);
 
-      verify(expiredCounter).increment();
-      verify(users, never()).getReferenceById(anyLong());
-      assertThat(vt.isUsed()).isFalse(); // Should not mark as used
+      verify(tokenDomainService).findValidToken(token);
+      verifyNoInteractions(userVerificationService);
     }
 
     @Test
@@ -250,48 +253,43 @@ class RegistrationServiceTest {
     void givenUsedToken_whenVerify_thenThrowException() {
       // Given
       UUID token = UUID.randomUUID();
-      VerificationToken vt = new VerificationToken(
-        token,
-        1L,
-        Instant.now().plus(1, ChronoUnit.HOURS),
-        true // Already used
-      );
-      Counter invalidCounter = mock(Counter.class);
 
-      when(vtRepo.findByTokenAndUsedFalse(token)).thenReturn(Optional.empty());
-      when(meter.counter("auth.verification.invalid"))
-        .thenReturn(invalidCounter);
+      when(tokenDomainService.findValidToken(token))
+        .thenThrow(AuthException.verificationInvalid());
 
       // When & Then
       assertThatThrownBy(() -> service.verify(token))
         .isInstanceOf(AuthException.class);
 
-      verify(invalidCounter).increment();
-      verify(users, never()).getReferenceById(anyLong());
+      verify(tokenDomainService).findValidToken(token);
+      verifyNoInteractions(userVerificationService);
     }
 
     @Test
     @DisplayName("deve funcionar mesmo no limite da expiração")
     void givenTokenAtExpirationBoundary_whenVerify_thenHandle() {
-      // Given - Token expiring in 1 second
+      // Given
       UUID token = UUID.randomUUID();
       User user = dummyUser();
       VerificationToken vt = new VerificationToken(
         token,
         user.getId(),
-        Instant.now().plus(1, ChronoUnit.SECONDS),
+        Instant.now().plus(1, ChronoUnit.SECONDS), // Expires very soon
         false
       );
 
-      when(vtRepo.findByTokenAndUsedFalse(token)).thenReturn(Optional.of(vt));
-      when(users.getReferenceById(user.getId())).thenReturn(user);
+      when(tokenDomainService.findValidToken(token)).thenReturn(vt);
+      when(userVerificationService.findUserForVerification(user.getId(), token))
+        .thenReturn(user);
 
-      // When & Then - Should succeed as it's still valid
+      // When & Then - Should not throw exception
       assertThatCode(() -> service.verify(token)).doesNotThrowAnyException();
 
-      assertThat(vt.isUsed()).isTrue();
-      assertThat(user.isEnabled()).isTrue();
-      verify(counter).increment();
+      verify(tokenDomainService).findValidToken(token);
+      verify(userVerificationService)
+        .findUserForVerification(user.getId(), token);
+      verify(userVerificationService).enableUser(user, token);
+      verify(tokenDomainService).markTokenAsUsed(vt);
     }
   }
 }

@@ -4,76 +4,58 @@ package com.kleberrhuan.houer.auth.application.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.kleberrhuan.houer.auth.application.port.jwt.TokenBlockList;
+import com.kleberrhuan.houer.auth.application.factory.TokenFactory;
 import com.kleberrhuan.houer.auth.domain.exception.AuthException;
-import com.kleberrhuan.houer.auth.infra.properties.JwtProps;
-import com.kleberrhuan.houer.auth.infra.security.jwt.JwtParser;
-import com.kleberrhuan.houer.auth.infra.security.jwt.JwtTokenProvider;
+import com.kleberrhuan.houer.auth.domain.service.CredentialValidationService;
+import com.kleberrhuan.houer.auth.domain.service.RefreshTokenDomainService;
 import com.kleberrhuan.houer.auth.infra.security.jwt.TokenPair;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.LoginRequest;
+import com.kleberrhuan.houer.user.application.mapper.UserMapper;
 import com.kleberrhuan.houer.user.domain.model.User;
 import com.kleberrhuan.houer.user.domain.repository.UserRepository;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceTest {
 
   @Mock
-  private UserRepository users;
+  private UserRepository userRepository;
 
   @Mock
-  private PasswordEncoder encoder;
+  private CredentialValidationService credentialValidationService;
 
   @Mock
-  private JwtTokenProvider jwt;
+  private RefreshTokenDomainService refreshTokenDomainService;
 
   @Mock
-  private TokenBlockList blockList;
+  private TokenFactory tokenFactory;
 
   @Mock
-  private JwtParser parser;
+  private TokenManagementService tokenManagementService;
 
   @Mock
-  private com.kleberrhuan.houer.auth.domain.repository.RefreshTokenRepository refreshTokens;
+  private UserMapper userMapper;
 
-  @InjectMocks
   private AuthenticationService service;
 
-  private JwtProps props;
-
   @BeforeEach
-  void setup() throws Exception {
-    // Gera chaves RSA fake apenas para preencher JwtProps
-    KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-    gen.initialize(2048);
-    KeyPair kp = gen.generateKeyPair();
-    props =
-      new JwtProps(
-        "testIssuer",
-        900L,
-        86_400L,
-        (RSAPublicKey) kp.getPublic(),
-        (RSAPrivateKey) kp.getPrivate()
+  void setup() {
+    service =
+      new AuthenticationService(
+        userRepository,
+        userMapper,
+        credentialValidationService,
+        refreshTokenDomainService,
+        tokenFactory,
+        tokenManagementService
       );
-
-    // substitui o campo final via reflexão (injecção manual, pois props é final)
-    java.lang.reflect.Field f =
-      AuthenticationService.class.getDeclaredField("props");
-    f.setAccessible(true);
-    f.set(service, props);
   }
 
   private User dummyUser(boolean enabled) {
@@ -95,10 +77,16 @@ class AuthenticationServiceTest {
     )
     void givenValidCredentials_whenLogin_thenReturnTokenPair() {
       User u = dummyUser(true);
-      when(users.findByEmailIgnoreCase("foo@bar.com"))
+      TokenPair expectedTokenPair = new TokenPair(
+        "access-token",
+        Optional.empty(),
+        900L
+      );
+
+      when(userRepository.findByEmailIgnoreCaseAll("foo@bar.com"))
         .thenReturn(Optional.of(u));
-      when(encoder.matches("123456", "hashed")).thenReturn(true);
-      when(jwt.accessToken(eq(u), anyString())).thenReturn("access-token");
+      when(tokenFactory.createTokenPair(u, false))
+        .thenReturn(expectedTokenPair);
 
       TokenPair pair = service.login(
         new LoginRequest("foo@bar.com", "123456", false)
@@ -107,7 +95,11 @@ class AuthenticationServiceTest {
       assertThat(pair).isNotNull();
       assertThat(pair.access()).isEqualTo("access-token");
       assertThat(pair.refresh()).isEmpty();
-      assertThat(pair.ttlSec()).isEqualTo(props.accessTtlSec());
+      assertThat(pair.ttlSec()).isEqualTo(900L);
+
+      verify(credentialValidationService).validateCredentials(u, "123456");
+      verify(credentialValidationService).validateUserEnabled(u);
+      verify(tokenFactory).createTokenPair(u, false);
     }
 
     @Test
@@ -116,14 +108,19 @@ class AuthenticationServiceTest {
     )
     void givenInvalidPassword_whenLogin_thenThrow() {
       User u = dummyUser(true);
-      when(users.findByEmailIgnoreCase("foo@bar.com"))
+      when(userRepository.findByEmailIgnoreCaseAll("foo@bar.com"))
         .thenReturn(Optional.of(u));
-      when(encoder.matches("bad", "hashed")).thenReturn(false);
+      doThrow(AuthException.badCredentials())
+        .when(credentialValidationService)
+        .validateCredentials(u, "bad");
 
       assertThatThrownBy(() ->
           service.login(new LoginRequest("foo@bar.com", "bad", false))
         )
         .isInstanceOf(AuthException.class);
+
+      verify(credentialValidationService).validateCredentials(u, "bad");
+      verifyNoInteractions(tokenFactory);
     }
 
     @Test
@@ -132,14 +129,20 @@ class AuthenticationServiceTest {
     )
     void givenDisabledUser_whenLogin_thenThrow() {
       User u = dummyUser(false);
-      when(users.findByEmailIgnoreCase("foo@bar.com"))
+      when(userRepository.findByEmailIgnoreCaseAll("foo@bar.com"))
         .thenReturn(Optional.of(u));
-      when(encoder.matches(anyString(), anyString())).thenReturn(true);
+      doThrow(AuthException.accountNotVerified())
+        .when(credentialValidationService)
+        .validateUserEnabled(u);
 
       assertThatThrownBy(() ->
           service.login(new LoginRequest("foo@bar.com", "123456", false))
         )
         .isInstanceOf(AuthException.class);
+
+      verify(credentialValidationService).validateCredentials(u, "123456");
+      verify(credentialValidationService).validateUserEnabled(u);
+      verifyNoInteractions(tokenFactory);
     }
   }
 }

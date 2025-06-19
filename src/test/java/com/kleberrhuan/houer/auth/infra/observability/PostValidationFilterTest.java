@@ -4,6 +4,7 @@ package com.kleberrhuan.houer.auth.infra.observability;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import java.time.Instant;
 import java.util.Map;
@@ -33,8 +34,11 @@ class PostValidationFilterTest {
     MDC.clear();
   }
 
-  private PostValidationFilter newFilter() {
-    return new PostValidationFilter();
+  private PostValidationFilter newFilter() throws Exception {
+    var registry = new SimpleMeterRegistry();
+    PostValidationFilter f = new PostValidationFilter(registry);
+    f.afterPropertiesSet();
+    return f;
   }
 
   private MockHttpServletRequest req() {

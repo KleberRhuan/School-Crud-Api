@@ -187,7 +187,7 @@ class BrevoEmailSenderTest {
       RuntimeException exception = new RuntimeException("Service unavailable");
 
       // Act
-      sender.fallback(exception, testNotification);
+      sender.fallback(testNotification, exception);
 
       // Assert
       ArgumentCaptor<OutboxMessage> messageCaptor = ArgumentCaptor.forClass(
@@ -209,7 +209,7 @@ class BrevoEmailSenderTest {
       RuntimeException exception = new RuntimeException("Circuit breaker open");
 
       // Act
-      sender.fallback(exception, testNotification);
+      sender.fallback(testNotification, exception);
 
       // Assert
       verify(store).save(any(OutboxMessage.class));
@@ -227,7 +227,7 @@ class BrevoEmailSenderTest {
 
       // Act & Assert
       for (Exception ex : exceptions) {
-        sender.fallback(ex, testNotification);
+        sender.fallback(testNotification, ex);
       }
 
       verify(store, times(3)).save(any(OutboxMessage.class));

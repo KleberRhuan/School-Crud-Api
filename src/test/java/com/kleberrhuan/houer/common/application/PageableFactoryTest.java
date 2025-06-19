@@ -15,12 +15,14 @@ class PageableFactoryTest {
   private final PageableFactory factory = new PageableFactory();
 
   @Test
-  @DisplayName("deve lançar IllegalArgumentException quando page for < 1")
-  void shouldThrowWhenPageNegative() {
+  @DisplayName("deve converter page 0 ou negativo para página 0")
+  void shouldConvertZeroOrNegativePageToZero() {
     PageableRequest req = new PageableRequest(0, 10, "id", Sort.Direction.ASC);
 
-    assertThatThrownBy(() -> factory.create(req))
-      .isInstanceOf(IllegalArgumentException.class);
+    Pageable p = factory.create(req);
+
+    assertThat(p.getPageNumber()).isEqualTo(0);
+    assertThat(p.getPageSize()).isEqualTo(10);
   }
 
   @Test

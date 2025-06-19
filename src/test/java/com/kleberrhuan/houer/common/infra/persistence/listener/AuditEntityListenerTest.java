@@ -7,8 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kleberrhuan.houer.common.application.service.AuditEventPersister;
 import com.kleberrhuan.houer.common.domain.model.AuditEvent;
-import com.kleberrhuan.houer.common.domain.repository.AuditEventRepository;
 import jakarta.persistence.Id;
 import java.time.Instant;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 class AuditEntityListenerTest {
 
   @Mock
-  AuditEventRepository repo;
+  AuditEventPersister repo;
 
   @Mock
   ObjectMapper mapper;
@@ -34,10 +34,9 @@ class AuditEntityListenerTest {
 
   void setup() {
     listener = new AuditEntityListener(repo, mapper);
-    SecurityContextHolder.clearContext(); // garante System actor
+    SecurityContextHolder.clearContext();
   }
 
-  // ----- dummy entidades ---------------------------------------------------
   static class DummyEntity {
 
     @Id
@@ -76,7 +75,7 @@ class AuditEntityListenerTest {
       ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(
         AuditEvent.class
       );
-      verify(repo).save(captor.capture());
+      verify(repo).persist(captor.capture());
       AuditEvent ev = captor.getValue();
 
       assertThat(ev.getEntity()).isEqualTo(DummyEntity.class.getSimpleName());
@@ -103,7 +102,7 @@ class AuditEntityListenerTest {
       ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(
         AuditEvent.class
       );
-      verify(repo).save(captor.capture());
+      verify(repo).persist(captor.capture());
       AuditEvent ev = captor.getValue();
 
       assertThat(ev.getEntityId()).isNull();
