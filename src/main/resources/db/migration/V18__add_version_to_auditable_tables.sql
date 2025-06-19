@@ -1,8 +1,8 @@
 ALTER TABLE school.school_metrics_jsonb 
-ADD COLUMN created_at TIMESTAMP WITH TIME ZONE,
-ADD COLUMN created_by BIGINT REFERENCES account.users(id),
-ADD COLUMN updated_by BIGINT REFERENCES account.users(id),
-ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE;
+ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS created_by BIGINT REFERENCES account.users(id),
+ADD COLUMN IF NOT EXISTS updated_by BIGINT REFERENCES account.users(id),
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE;
 
 -- Comentários
 COMMENT ON COLUMN school.school.version IS 'Versão para controle de concorrência otimista';
