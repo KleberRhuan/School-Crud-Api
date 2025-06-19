@@ -50,7 +50,7 @@ RUN mkdir -p /app/logs && \
     chmod 777 /app/logs
 
 # Copie o JAR com o nome exato
-COPY --from=build /workspace/target/esdras-research-1.0.0.jar /app/app.jar
+COPY --from=build /workspace/target/houer-1.0.0.jar /app/app.jar
 
 # Ajustar permissões do JAR
 RUN chmod +x /app/app.jar && \
