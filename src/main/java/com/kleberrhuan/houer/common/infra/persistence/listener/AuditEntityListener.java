@@ -2,8 +2,8 @@
 package com.kleberrhuan.houer.common.infra.persistence.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kleberrhuan.houer.common.application.service.AuditEventPersister;
 import com.kleberrhuan.houer.common.domain.model.AuditEvent;
-import com.kleberrhuan.houer.common.domain.repository.AuditEventRepository;
 import jakarta.persistence.Id;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostRemove;
@@ -27,7 +27,7 @@ import org.springframework.util.ReflectionUtils;
 @RequiredArgsConstructor(onConstructor_ = @Lazy)
 public class AuditEntityListener {
 
-  private final AuditEventRepository repo;
+  private final AuditEventPersister persister;
   private final ObjectMapper mapper;
   private static final Map<Class<?>, Field> ID_CACHE =
     new ConcurrentHashMap<>();
@@ -50,7 +50,7 @@ public class AuditEntityListener {
   private void save(Object entity, AuditAction action) {
     try {
       AuditEvent ev = buildEvent(entity, action);
-      repo.save(ev);
+      persister.persist(ev);
     } catch (Exception ex) {
       log.error(
         "Failed to persist audit event for {} {}",
@@ -69,7 +69,20 @@ public class AuditEntityListener {
       .getContext()
       .getAuthentication();
     if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
-      ev.setActor(Long.parseLong(jwt.getClaimAsString("userId")));
+      String sub = jwt.getClaimAsString("sub");
+      String idStr = (sub != null && !sub.isBlank())
+        ? sub
+        : jwt.getClaimAsString("userId");
+      if (idStr != null && !idStr.isBlank()) {
+        try {
+          ev.setActor(Long.parseLong(idStr));
+        } catch (NumberFormatException ex) {
+          log.warn("Invalid user id claim: {}", idStr);
+          ev.setSystemActor();
+        }
+      } else {
+        ev.setSystemActor();
+      }
     } else {
       ev.setSystemActor();
     }

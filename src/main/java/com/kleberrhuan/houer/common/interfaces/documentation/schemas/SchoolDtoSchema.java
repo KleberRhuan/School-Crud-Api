@@ -4,7 +4,11 @@ package com.kleberrhuan.houer.common.interfaces.documentation.schemas;
 import com.kleberrhuan.houer.school.interfaces.dto.SchoolDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(name = "SchoolDto", description = "Estrutura de resposta com dados completos da escola, incluindo métricas", implementation = SchoolDto.class, example = """
+@Schema(
+  name = "SchoolDto",
+  description = "Estrutura de resposta com dados completos da escola, incluindo métricas",
+  implementation = SchoolDto.class,
+  example = """
     {
       "code": 12345678,
       "schoolName": "ESCOLA MUNICIPAL EXEMPLO",
@@ -29,6 +33,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
         "updatedAt": "2025-01-15T10:30:00Z"
       }
     }
-    """)
-public interface SchoolDtoSchema {
-}
+    """
+)
+public interface SchoolDtoSchema {}

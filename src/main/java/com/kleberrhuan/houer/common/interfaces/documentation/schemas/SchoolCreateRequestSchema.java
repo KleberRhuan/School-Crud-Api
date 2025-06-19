@@ -4,7 +4,11 @@ package com.kleberrhuan.houer.common.interfaces.documentation.schemas;
 import com.kleberrhuan.houer.school.interfaces.dto.SchoolCreateRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(name = "SchoolCreateRequest", description = "Estrutura de requisição para criação de uma nova escola", implementation = SchoolCreateRequest.class, example = """
+@Schema(
+  name = "SchoolCreateRequest",
+  description = "Estrutura de requisição para criação de uma nova escola",
+  implementation = SchoolCreateRequest.class,
+  example = """
     {
       "code": 12345678,
       "schoolName": "ESCOLA MUNICIPAL NOVO HORIZONTE",
@@ -24,6 +28,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
         "hasLab": 0
       }
     }
-    """)
-public interface SchoolCreateRequestSchema {
-}
+    """
+)
+public interface SchoolCreateRequestSchema {}

@@ -4,7 +4,11 @@ package com.kleberrhuan.houer.common.interfaces.documentation.schemas;
 import com.kleberrhuan.houer.school.interfaces.dto.SchoolUpdateRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(name = "SchoolUpdateRequest", description = "Estrutura de requisição para atualização dos dados de uma escola. Todos os campos são opcionais.", implementation = SchoolUpdateRequest.class, example = """
+@Schema(
+  name = "SchoolUpdateRequest",
+  description = "Estrutura de requisição para atualização dos dados de uma escola. Todos os campos são opcionais.",
+  implementation = SchoolUpdateRequest.class,
+  example = """
     {
       "schoolName": "ESCOLA MUNICIPAL NOVO HORIZONTE ATUALIZADA",
       "administrativeDependency": "Estadual",
@@ -14,6 +18,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
         "totalTeachers": 18
       }
     }
-    """)
-public interface SchoolUpdateRequestSchema {
-}
+    """
+)
+public interface SchoolUpdateRequestSchema {}

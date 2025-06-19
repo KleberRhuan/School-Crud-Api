@@ -23,4 +23,13 @@ public class InfrastructureException extends ApiException {
       args != null ? args : new Object[0]
     );
   }
+
+  public static InfrastructureException defaultException(String message) {
+    return new InfrastructureException(
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      ApiErrorType.SYSTEM_ERROR,
+      MessageKey.of("error.infrastructure.default"),
+      message
+    );
+  }
 }

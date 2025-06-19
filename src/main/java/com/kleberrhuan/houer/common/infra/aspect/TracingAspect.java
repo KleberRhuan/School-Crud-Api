@@ -13,8 +13,9 @@ import org.springframework.stereotype.Component;
 public class TracingAspect {
 
   @Around(
-    "@within(org.springframework.stereotype.Service) || " +
-    "@within(org.springframework.web.bind.annotation.RestController)"
+    "(@within(org.springframework.stereotype.Service) || " +
+    "@within(org.springframework.web.bind.annotation.RestController)) && " +
+    "!@within(com.kleberrhuan.houer.common.infra.aspect.NoTracing)"
   )
   public Object profile(ProceedingJoinPoint pjp) throws Throwable {
     long start = System.nanoTime();

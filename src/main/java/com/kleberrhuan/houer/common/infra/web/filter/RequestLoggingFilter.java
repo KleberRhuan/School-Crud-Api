@@ -2,7 +2,8 @@
 package com.kleberrhuan.houer.common.infra.web.filter;
 
 import com.kleberrhuan.houer.common.infra.properties.AuditProperties;
-import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,11 +34,18 @@ import org.springframework.web.util.pattern.PathPatternParser;
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
   private final AuditProperties cfg;
+  private final MeterRegistry meterRegistry;
   private static final PathPatternParser PARSER =
     PathPatternParser.defaultInstance;
 
+  private Timer latencyTimer;
+
   @Override
-  @Timed(value = "http.custom.latency")
+  public void afterPropertiesSet() {
+    this.latencyTimer = meterRegistry.timer("http.custom.latency");
+  }
+
+  @Override
   protected void doFilterInternal(
     @NonNull HttpServletRequest req,
     @NonNull HttpServletResponse res,
@@ -76,6 +84,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
       if (cfg.isLogResponses()) logResponse(r, p, elapsedMs);
       if (needsBody) ((ContentCachingResponseWrapper) p).copyBodyToResponse();
+      latencyTimer.record(elapsedMs, TimeUnit.MILLISECONDS);
     }
   }
 

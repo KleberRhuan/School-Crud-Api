@@ -15,6 +15,10 @@ public class PasswordValidator
 
   @Override
   public boolean isValid(String password, ConstraintValidatorContext ctx) {
+    if (password == null) {
+      return false;
+    }
+
     RuleResult result = validator.validate(new PasswordData(password));
     if (result.isValid()) return true;
 

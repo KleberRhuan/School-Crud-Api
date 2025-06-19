@@ -54,7 +54,7 @@ public class BrevoEmailSender implements EmailNotification {
   }
 
   @Counted(value = "email.outbox.total", extraTags = { "provider", "brevo" })
-  public void fallback(Throwable ex, NotificationModel n) {
+  public void fallback(NotificationModel n, Throwable ex) {
     store.save(OutboxMessage.create(n));
     log.warn(
       "Email routed to outbox: to={} subject='{}' cause={}",
