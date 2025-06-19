@@ -1,14 +1,28 @@
 services:
   houer-api:
-    image: "houer-api:dev"
+    image: "houer-api"
     build: .
     environment:
+      - RABBITMQ_HOST=rabbitmq
       - management.endpoints.web.exposure.include=prometheus,info,health
     ports:
       - "8080:8080"
+    env_file:
+      - ./.env
     depends_on:
+      - rabbitmq
       - prometheus
       - postgres
+
+  # --- RabbitMQ ------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"
+      - "15672:15672" 
 
   # --- Prometheus ------------------------------------------
   prometheus:
