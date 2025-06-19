@@ -6,8 +6,8 @@ spring:
       maximum-pool-size: 5
       minimum-idle: 1
       connection-timeout: 20000
-  
-  # Hot reload e desenvolvimento 
+
+  # Hot reload e desenvolvimento
   devtools:
     restart:
       enabled: true
@@ -16,14 +16,14 @@ spring:
       enabled: true
     remote:
       secret: houer-dev-secret
-  
+
   # Configurações Flyway para ambiente de desenvolvimento
   flyway:
     enabled: true
     baseline-on-migrate: true
     clean-disabled: false
-    locations: classpath:db/migration
-  
+    locations: classpath:db/migration,classpath:db/callback
+
   # Configurações JPA
   jpa:
     hibernate:

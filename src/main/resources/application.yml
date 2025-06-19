@@ -36,7 +36,7 @@ spring:
   # Configurações de banco de dados
   flyway:
     default-schema: config
-    locations: classpath:db/migration
+    locations: classpath:db/migration,classpath:db/callback
     validate-on-migrate: true
     clean-disabled: true
     baseline-on-migrate: false
@@ -333,3 +333,12 @@ logging:
     org.springframework.batch: ${BATCH_LOG_LEVEL:WARN}
     org.springframework.amqp: ${RABBITMQ_LOG_LEVEL:WARN}
     org.springframework.web.socket: ${WEBSOCKET_LOG_LEVEL:WARN}
+
+# Configurações do usuário admin (callback Flyway)
+admin:
+  default:
+    email: ${ADMIN_DEFAULT_EMAIL:admin@houer.com}
+    name: ${ADMIN_DEFAULT_NAME:Administrador do Sistema}
+    password-hash: ${ADMIN_DEFAULT_PASSWORD_HASH:$2a$10$N.zmdr9k7uOIW8B.Wneqh.XvVWnZ6m7qBjHiQkqjjFaO7s5YjjKWG}
+  production:
+    password-hash: ${ADMIN_PROD_PASSWORD_HASH:$2a$12$vQx8wHZQ9F2nK.XB8Hl6uOyZFj3sP.dR1mX7nE9kL5tW2cA8fJ6gK}
