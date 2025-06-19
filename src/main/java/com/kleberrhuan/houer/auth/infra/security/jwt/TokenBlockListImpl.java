@@ -12,7 +12,7 @@ public class TokenBlockListImpl implements TokenBlockList {
   private final Cache<String, Boolean> cache;
 
   public TokenBlockListImpl(
-    @Qualifier("jwtBlockCache") Cache<String, Boolean> cache
+    @Qualifier("jwtBlockList") Cache<String, Boolean> cache
   ) {
     this.cache = cache;
   }

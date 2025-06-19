@@ -26,9 +26,7 @@ public class CorsConfig {
     configuration.setAllowedMethods(corsProperties.allowedMethods());
     configuration.setAllowedHeaders(corsProperties.allowedHeaders());
     configuration.setAllowCredentials(corsProperties.allowCredentials());
-    configuration.setExposedHeaders(
-      List.of("Authorization", "Content-Type", "X-Password-Reset-Token")
-    );
+    configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
     configuration.setMaxAge(corsProperties.maxAge());
 
     UrlBasedCorsConfigurationSource source =

@@ -41,10 +41,7 @@ public class JwtTokenProvider {
       .issuer(props.issuer())
       .issuedAt(now)
       .expiresAt(now.plusSeconds(ttlSec))
-      .claim(
-        "roles",
-        String.join(" ", u.getRoles().stream().map(Role::name).toList())
-      )
+      .claim("roles", u.getRoles().stream().map(Role::name).toList())
       .build();
     return encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
   }

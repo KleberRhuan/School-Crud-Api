@@ -8,6 +8,7 @@ import com.kleberrhuan.houer.auth.interfaces.dto.request.LoginRequest;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.RegisterRequest;
 import com.kleberrhuan.houer.auth.interfaces.dto.response.TokenResponse;
 import com.kleberrhuan.houer.common.interfaces.documentation.controllers.AuthControllerDocumentation;
+import com.kleberrhuan.houer.user.interfaces.dto.response.UserResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -18,7 +19,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -99,12 +99,15 @@ public class AuthController implements AuthControllerDocumentation {
 
   @PostMapping("/logout")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void logout(
-    @AuthenticationPrincipal JwtAuthenticationToken jwt,
-    HttpServletResponse res
-  ) {
+  public void logout(JwtAuthenticationToken jwt, HttpServletResponse res) {
     auth.logout(jwt.getToken().getId());
     clearCookie(res);
+  }
+
+  @GetMapping("/me")
+  public ResponseEntity<UserResponse> me(JwtAuthenticationToken jwt) {
+    Long sub = Long.parseLong(jwt.getToken().getSubject());
+    return ResponseEntity.ok(auth.me(sub));
   }
 
   /* ======== helpers ================================================= */
@@ -112,7 +115,7 @@ public class AuthController implements AuthControllerDocumentation {
   private static ResponseCookie buildRefreshCookie(String value, long ttl) {
     return ResponseCookie
       .from(COOKIE, value)
-      .path("/auth/refresh")
+      .path("/api/v1/auth/refresh")
       .maxAge(ttl)
       .httpOnly(true)
       .secure(true)
@@ -125,7 +128,7 @@ public class AuthController implements AuthControllerDocumentation {
       HttpHeaders.SET_COOKIE,
       ResponseCookie
         .from(COOKIE, "")
-        .path("/auth/refresh")
+        .path("/api/v1/auth/refresh")
         .maxAge(0)
         .httpOnly(true)
         .secure(true)

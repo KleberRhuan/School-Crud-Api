@@ -1,25 +1,21 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.auth.application.service;
 
-import com.kleberrhuan.houer.auth.application.port.jwt.TokenBlockList;
+import com.kleberrhuan.houer.auth.application.factory.TokenFactory;
 import com.kleberrhuan.houer.auth.domain.exception.AuthException;
 import com.kleberrhuan.houer.auth.domain.model.RefreshToken;
-import com.kleberrhuan.houer.auth.domain.repository.RefreshTokenRepository;
-import com.kleberrhuan.houer.auth.infra.properties.JwtProps;
-import com.kleberrhuan.houer.auth.infra.security.jwt.JwtParser;
-import com.kleberrhuan.houer.auth.infra.security.jwt.JwtTokenProvider;
+import com.kleberrhuan.houer.auth.domain.service.CredentialValidationService;
+import com.kleberrhuan.houer.auth.domain.service.RefreshTokenDomainService;
 import com.kleberrhuan.houer.auth.infra.security.jwt.TokenPair;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.LoginRequest;
+import com.kleberrhuan.houer.common.domain.exception.EntityNotFoundException;
+import com.kleberrhuan.houer.user.application.mapper.UserMapper;
 import com.kleberrhuan.houer.user.domain.model.User;
 import com.kleberrhuan.houer.user.domain.repository.UserRepository;
+import com.kleberrhuan.houer.user.interfaces.dto.response.UserResponse;
 import io.micrometer.core.annotation.Counted;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,87 +24,59 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AuthenticationService {
 
-  private final UserRepository users;
-  private final RefreshTokenRepository refreshTokens;
-  private final PasswordEncoder encoder;
-  private final JwtTokenProvider jwt;
-  private final TokenBlockList blockList;
-  private final JwtProps props;
-  private final JwtParser fastParser;
+  private final UserRepository userRepository;
+  private final UserMapper userMapper;
+  private final CredentialValidationService credentialValidationService;
+  private final RefreshTokenDomainService refreshTokenDomainService;
+  private final TokenFactory tokenFactory;
+  private final TokenManagementService tokenManagementService;
 
-  /* ---------- LOGIN -------------------------------------- */
   @Counted(value = "auth.login.ok")
   @Transactional
-  public TokenPair login(LoginRequest req) {
-    User u = users
-      .findByEmailIgnoreCase(req.email())
-      .orElseThrow(AuthException::badCredentials);
+  public TokenPair login(LoginRequest request) {
+    User user = findUserByEmail(request.email());
+    credentialValidationService.validateCredentials(user, request.password());
+    credentialValidationService.validateUserEnabled(user);
 
-    if (
-      !encoder.matches(req.password(), u.getPasswordHash())
-    ) throw AuthException.badCredentials();
+    TokenPair tokenPair = tokenFactory.createTokenPair(
+      user,
+      request.rememberMe()
+    );
+    log.info("User {} logged in successfully", user.getId());
 
-    if (!u.isEnabled()) throw AuthException.accountNotVerified();
-
-    TokenPair pair = issueTokens(u, req.rememberMe());
-    log.info("User {} logged in successfully", u.getId());
-    return pair;
+    return tokenPair;
   }
 
-  /* ---------- REFRESH ------------------------------------ */
   @Counted(value = "auth.refresh.ok")
   @Transactional
   public TokenPair refresh(String refreshJwt) {
-    Jwt parsed = fastParser.parse(refreshJwt);
-    UUID series = UUID.fromString(parsed.getId());
+    RefreshToken refreshToken =
+      refreshTokenDomainService.findAndValidateRefreshToken(refreshJwt);
+    refreshTokenDomainService.markTokenAsUsed(refreshToken);
 
-    RefreshToken rt = refreshTokens
-      .findById(series)
-      .orElseThrow(AuthException::refreshNotFound);
+    User user = userRepository.getReferenceById(refreshToken.getUserId());
+    TokenPair tokenPair = tokenFactory.createTokenPair(user, true);
 
-    if (
-      rt.isUsed() || rt.getExpiresAt().isBefore(Instant.now())
-    ) throw AuthException.refreshExpired();
-
-    rt.use();
-    refreshTokens.save(rt);
-    User u = users.getReferenceById(rt.getUserId());
-
-    TokenPair pair = issueTokens(u, true);
-    log.info("Token refreshed for user {}", u.getId());
-    return pair;
+    log.info("Token refreshed for user {}", user.getId());
+    return tokenPair;
   }
 
-  /* ---------- LOGOUT ------------------------------------- */
   @Counted(value = "auth.logout")
   public void logout(String jti) {
-    blockList.block(jti);
-    log.info("Logout executed - jti={}", jti);
+    tokenManagementService.blockToken(jti);
   }
 
-  /* ---------- HELPERS ------------------------------------ */
-  private TokenPair issueTokens(User u, boolean rememberMe) {
-    String jti = UUID.randomUUID().toString();
-    String access = jwt.accessToken(u, jti);
+  public UserResponse me(Long sub) {
+    User user = userRepository
+      .findById(sub)
+      .orElseThrow(() -> new EntityNotFoundException("Usuário", sub));
 
-    if (!rememberMe) return new TokenPair(
-      access,
-      Optional.empty(),
-      props.accessTtlSec()
-    );
+    return userMapper.map(user);
+  }
 
-    UUID series = UUID.randomUUID();
-    String refresh = jwt.refreshToken(u, series);
-
-    refreshTokens.save(
-      new RefreshToken(
-        series,
-        u.getId(),
-        Instant.now().plusSeconds(props.refreshTtlSec()),
-        false
-      )
-    );
-
-    return new TokenPair(access, Optional.of(refresh), props.refreshTtlSec());
+  private User findUserByEmail(String email) {
+    return userRepository
+      .findByEmailIgnoreCaseAll(email)
+      .orElseThrow(AuthException::badCredentials);
   }
 }

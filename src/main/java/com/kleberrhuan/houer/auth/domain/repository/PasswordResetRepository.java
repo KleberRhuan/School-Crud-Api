@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -26,6 +27,7 @@ public interface PasswordResetRepository
     @Param("now") Instant now
   );
 
+  @Modifying
   @Query("DELETE FROM PasswordReset pr WHERE pr.expiresAt < :now")
   void deleteExpired(@Param("now") Instant now);
 
