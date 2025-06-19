@@ -2,20 +2,18 @@
 package com.kleberrhuan.houer.csv.interfaces.dto;
 
 import com.kleberrhuan.houer.csv.domain.model.ImportJobStatus;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-import java.util.UUID;
-
 /**
- * DTO para mensagens de notificação WebSocket sobre o progresso de importação
- * CSV.
- * 
- * Usado para comunicação em tempo real entre o backend e frontend durante
- * processamento de jobs de importação assíncrona.
+ * DTO para mensagens de notificação WebSocket sobre o progresso de importação CSV.
+ *
+ * <p>Usado para comunicação em tempo real entre o backend e frontend durante processamento de jobs de importação
+ * assíncrona.
  */
 @Data
 @Builder
@@ -37,11 +35,14 @@ public class CsvNotificationMessage {
     if (totalRecords == null || totalRecords == 0) {
       return 0.0;
     }
-    return (processedRecords.doubleValue() / totalRecords.doubleValue()) * 100.0;
+    return (
+      (processedRecords.doubleValue() / totalRecords.doubleValue()) * 100.0
+    );
   }
 
   public Boolean isFinished() {
-    return status == ImportJobStatus.COMPLETED ||
-        status == ImportJobStatus.FAILED;
+    return (
+      status == ImportJobStatus.COMPLETED || status == ImportJobStatus.FAILED
+    );
   }
 }

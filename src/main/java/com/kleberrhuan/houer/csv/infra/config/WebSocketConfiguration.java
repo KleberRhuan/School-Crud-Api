@@ -10,20 +10,21 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 /**
  * Configuração WebSocket para notificações em tempo real de importação CSV.
- * 
- * Endpoints disponíveis:
- * - /ws: Endpoint principal STOMP com fallback SockJS
- * 
- * Canais de mensagem:
- * - /topic/csv-import/{jobId}: Notificações de progresso de jobs específicos
- * - /user/{userId}/queue/csv-import: Notificações privadas do usuário
- * - /user/{userId}/queue/csv-progress: Atualizações de progresso em tempo real
+ *
+ * <p>Endpoints disponíveis: - /ws: Endpoint principal STOMP com fallback SockJS
+ *
+ * <p>Canais de mensagem: - /topic/csv-import/{jobId}: Notificações de progresso de jobs específicos -
+ * /user/{userId}/queue/csv-import: Notificações privadas do usuário - /user/{userId}/queue/csv-progress: Atualizações
+ * de progresso em tempo real
  */
 @Configuration
 @EnableWebSocketMessageBroker
-public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
+public class WebSocketConfiguration
+  implements WebSocketMessageBrokerConfigurer {
 
-  @Value("${school.import.websocket.allowed-origins:http://localhost:3000,http://localhost:3001}")
+  @Value(
+    "${school.import.websocket.allowed-origins:http://localhost:3000,http://localhost:3001}"
+  )
   private String allowedOrigins;
 
   @Override
@@ -35,12 +36,13 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint("/ws")
-        .setAllowedOriginPatterns(allowedOrigins.split(","))
-        .withSockJS()
-        .setHeartbeatTime(25000) // Heartbeat SockJS
-        .setDisconnectDelay(30000) // Timeout para desconexão
-        .setHttpMessageCacheSize(1000) // Cache de mensagens HTTP
-        .setStreamBytesLimit(128 * 1024); // Limite de bytes por stream
+    registry
+      .addEndpoint("/ws")
+      .setAllowedOriginPatterns(allowedOrigins.split(","))
+      .withSockJS()
+      .setHeartbeatTime(25000) // Heartbeat SockJS
+      .setDisconnectDelay(30000) // Timeout para desconexão
+      .setHttpMessageCacheSize(1000) // Cache de mensagens HTTP
+      .setStreamBytesLimit(128 * 1024); // Limite de bytes por stream
   }
 }

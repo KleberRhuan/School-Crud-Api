@@ -1,5 +1,5 @@
 /* (C)2025 Kleber Rhuan */
-package com.kleberrhuan.houer.csv.application.processor;
+package com.kleberrhuan.houer.csv.application.port;
 
 import java.util.stream.Stream;
 

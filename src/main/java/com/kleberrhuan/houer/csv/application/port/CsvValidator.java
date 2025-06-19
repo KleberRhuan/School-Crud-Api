@@ -1,5 +1,5 @@
 /* (C)2025 Kleber Rhuan */
-package com.kleberrhuan.houer.csv.application.validator;
+package com.kleberrhuan.houer.csv.application.port;
 
 import java.io.InputStream;
 import java.util.List;
