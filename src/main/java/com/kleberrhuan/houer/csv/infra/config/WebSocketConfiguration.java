@@ -1,24 +1,19 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.csv.infra.config;
 
+import com.kleberrhuan.houer.auth.infra.config.TokenHandshakeInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
 
-/**
- * Configuração WebSocket para notificações em tempo real de importação CSV.
- *
- * <p>Endpoints disponíveis: - /ws: Endpoint principal STOMP com fallback SockJS
- *
- * <p>Canais de mensagem: - /topic/csv-import/{jobId}: Notificações de progresso de jobs específicos -
- * /user/{userId}/queue/csv-import: Notificações privadas do usuário - /user/{userId}/queue/csv-progress: Atualizações
- * de progresso em tempo real
- */
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfiguration
   implements WebSocketMessageBrokerConfigurer {
 
@@ -26,6 +21,8 @@ public class WebSocketConfiguration
     "${school.import.websocket.allowed-origins:http://localhost:3000,http://localhost:3001,https://houer-test.rhuan.cloud}"
   )
   private String allowedOrigins;
+
+  private final TokenHandshakeInterceptor tokenHandshakeInterceptor;
 
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -36,10 +33,10 @@ public class WebSocketConfiguration
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    // Endpoint principal com SockJS habilitado
     registry
       .addEndpoint("/ws")
       .setAllowedOriginPatterns(allowedOrigins.split(","))
+      .addInterceptors(tokenHandshakeInterceptor)
       .withSockJS()
       .setHeartbeatTime(25000) // Heartbeat SockJS
       .setDisconnectDelay(30000) // Timeout para desconexão
@@ -47,11 +44,14 @@ public class WebSocketConfiguration
       .setStreamBytesLimit(128 * 1024) // Limite de bytes por stream
       .setClientLibraryUrl(
         "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"
-      ); // SockJS via HTTPS
-
-    // Endpoint nativo WebSocket (sem SockJS) - funciona melhor com HTTPS
+      );
+    
     registry
       .addEndpoint("/ws-native")
-      .setAllowedOriginPatterns(allowedOrigins.split(","));
+      .setAllowedOriginPatterns(allowedOrigins.split(","))
+      .addInterceptors(
+        tokenHandshakeInterceptor,
+        new HttpSessionHandshakeInterceptor()
+      );
   }
 }
