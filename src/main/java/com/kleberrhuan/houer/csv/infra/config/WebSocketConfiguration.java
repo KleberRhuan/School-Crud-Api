@@ -34,7 +34,7 @@ public class WebSocketConfiguration
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry
-      .addEndpoint("/ws")
+            .addEndpoint("/api/v1/ws")
       .setAllowedOriginPatterns(allowedOrigins.split(","))
       .addInterceptors(tokenHandshakeInterceptor)
       .withSockJS()
@@ -47,7 +47,7 @@ public class WebSocketConfiguration
       );
 
     registry
-      .addEndpoint("/ws-native")
+            .addEndpoint("/api/v1/ws-native")
       .setAllowedOriginPatterns(allowedOrigins.split(","))
       .addInterceptors(
         tokenHandshakeInterceptor,
