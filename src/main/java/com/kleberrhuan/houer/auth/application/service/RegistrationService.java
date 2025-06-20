@@ -6,6 +6,7 @@ import com.kleberrhuan.houer.auth.domain.model.VerificationToken;
 import com.kleberrhuan.houer.auth.domain.repository.VerificationTokenRepository;
 import com.kleberrhuan.houer.auth.domain.service.VerificationTokenDomainService;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.RegisterRequest;
+import com.kleberrhuan.houer.common.domain.exception.EntityNotFoundException;
 import com.kleberrhuan.houer.user.application.mapper.UserMapper;
 import com.kleberrhuan.houer.user.domain.model.User;
 import com.kleberrhuan.houer.user.domain.repository.UserRepository;
@@ -71,6 +72,36 @@ public class RegistrationService {
       userVerificationService.enableUser(user, token);
       tokenDomainService.markTokenAsUsed(verificationToken);
     }
+  }
+
+  @Counted(
+    value = "auth.verification.resend.executions",
+    description = "Execuções de reenvio de verificação"
+  )
+  @Timed(
+    value = "auth.verification.resend.time",
+    description = "Tempo de reenvio de verificação"
+  )
+  @Transactional
+  public void resendVerification(String email, String baseUrl) {
+    User user = userRepository
+      .findByEmailIgnoreCaseAll(email)
+      .orElseThrow(() -> {
+        log.warn("Tentativa de reenvio para email inexistente: {}", email);
+        return new EntityNotFoundException("Email", email);
+      });
+
+    if (user.isEnabled()) {
+      log.info("Tentativa de reenvio para conta já verificada: {}", email);
+      return;
+    }
+
+    verificationTokenRepository.deleteByUserIdAndUsedFalse(user.getId());
+    VerificationToken newToken = createAndSaveVerificationToken(user);
+
+    sendVerificationNotification(user, baseUrl, newToken);
+
+    log.info("Email de verificação reenviado para: {}", email);
   }
 
   private User createAndSaveUser(RegisterRequest request) {

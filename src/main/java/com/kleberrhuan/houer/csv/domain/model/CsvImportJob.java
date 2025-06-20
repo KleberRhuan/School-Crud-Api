@@ -46,4 +46,7 @@ public class CsvImportJob extends Auditable<Long> {
 
   @Column(name = "finished_at")
   private Instant finishedAt;
+
+  @Version
+  private Long version;
 }

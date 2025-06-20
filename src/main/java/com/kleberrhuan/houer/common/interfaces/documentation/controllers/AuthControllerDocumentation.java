@@ -3,6 +3,7 @@ package com.kleberrhuan.houer.common.interfaces.documentation.controllers;
 
 import com.kleberrhuan.houer.auth.interfaces.dto.request.LoginRequest;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.RegisterRequest;
+import com.kleberrhuan.houer.auth.interfaces.dto.request.ResendVerificationRequest;
 import com.kleberrhuan.houer.auth.interfaces.dto.response.TokenResponse;
 import com.kleberrhuan.houer.common.interfaces.documentation.schemas.ErrorResponseSchema;
 import com.kleberrhuan.houer.common.interfaces.documentation.schemas.LoginRequestSchema;
@@ -105,27 +106,60 @@ public interface AuthControllerDocumentation {
   );
 
   @Operation(
-    summary = "Verificar e-mail",
+    summary = "Reenviar email de verificação",
     description = """
-      Ativa a conta do usuário validando o token recebido por e-mail.\n          Em caso de sucesso, o usuário é redirecionado (HTTP 302) para a página de confirmação no front-end.\n          """
+      Reenvia o email de verificação para uma conta ainda não verificada.\n\n
+      • Se a conta já está verificada, a operação é ignorada silenciosamente por segurança\n
+      • Tokens antigos não utilizados são invalidados antes de criar um novo\n
+      • Por segurança, não revela se o email existe ou não no sistema\n
+      """
   )
   @ApiResponses(
     {
       @ApiResponse(
-        responseCode = "302",
+        responseCode = "202",
+        description = "Solicitação aceita. Se o email existir e não estiver verificado, um novo email será enviado."
+      ),
+      @ApiResponse(ref = "#/components/responses/BadRequest"),
+      @ApiResponse(ref = "#/components/responses/InternalServerError"),
+    }
+  )
+  void resendVerification(
+    @RequestBody(
+      description = "Email para reenvio da verificação",
+      required = true,
+      content = @Content(
+        examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+          name = "Reenvio Exemplo",
+          summary = "Exemplo de payload para reenvio",
+          value = "{\n  \"email\": \"joao.silva@example.com\"\n}"
+        )
+      )
+    ) @Valid ResendVerificationRequest dto,
+    HttpServletRequest req
+  );
+
+  @Operation(
+    summary = "Verificar e-mail",
+    description = """
+      Ativa a conta do usuário validando o token recebido por e-mail. """
+  )
+  @ApiResponses(
+    {
+      @ApiResponse(
+        responseCode = "200",
         description = "E-mail verificado com sucesso – redirecionamento para o front-end"
       ),
       @ApiResponse(ref = "#/components/responses/BadRequest"),
       @ApiResponse(ref = "#/components/responses/InternalServerError"),
     }
   )
-  void verify(
+  ResponseEntity<Void> verify(
     @Parameter(
       description = "Token de verificação enviado por email",
       required = true,
       example = "123e4567-e89b-12d3-a456-426614174000"
-    ) @RequestParam UUID token,
-    HttpServletResponse res
+    ) @RequestParam UUID token
   );
 
   @Operation(

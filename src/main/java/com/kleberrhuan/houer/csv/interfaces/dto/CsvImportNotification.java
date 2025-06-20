@@ -4,7 +4,9 @@ package com.kleberrhuan.houer.csv.interfaces.dto;
 import com.kleberrhuan.houer.csv.domain.model.ImportJobStatus;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 public record CsvImportNotification(
   UUID jobId,
   Long userId,

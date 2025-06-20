@@ -8,7 +8,7 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - ./.env
+      - ./local.env
     depends_on:
       - rabbitmq
       - prometheus
@@ -22,7 +22,9 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
     ports:
       - "5672:5672"
-      - "15672:15672" 
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
   # --- Prometheus ------------------------------------------
   prometheus:
@@ -47,6 +49,8 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
 
@@ -58,3 +62,10 @@ services:
       - POSTGRES_PASSWORD=Teste123@
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  rabbitmq_data:
+  grafana_data:
+  postgres_data:

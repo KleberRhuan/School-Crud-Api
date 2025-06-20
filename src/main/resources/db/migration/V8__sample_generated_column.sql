@@ -2,16 +2,16 @@
 
 
 ALTER TABLE school.school_metrics_jsonb
-  ADD COLUMN salas_aula INTEGER
+  ADD COLUMN IF NOT EXISTS salas_aula INTEGER
     GENERATED ALWAYS AS ((metrics->>'SALAS_AULA')::integer) STORED;
 
 ALTER TABLE school.school_metrics_jsonb
-  ADD COLUMN salas_utilizadas INTEGER
+  ADD COLUMN IF NOT EXISTS salas_utilizadas INTEGER
     GENERATED ALWAYS AS ((metrics->>'SALAS_UTILIZADAS')::integer) STORED;
 
 -- Índices para as colunas geradas
-CREATE INDEX idx_salas_aula ON school.school_metrics_jsonb (salas_aula);
-CREATE INDEX idx_salas_utilizadas ON school.school_metrics_jsonb (salas_utilizadas);
+CREATE INDEX IF NOT EXISTS idx_salas_aula ON school.school_metrics_jsonb (salas_aula);
+CREATE INDEX IF NOT EXISTS idx_salas_utilizadas ON school.school_metrics_jsonb (salas_utilizadas);
 
 -- Comentários
 COMMENT ON COLUMN school.school_metrics_jsonb.salas_aula IS 'Coluna gerada: quantidade de salas de aula (extraído do JSONB)';
