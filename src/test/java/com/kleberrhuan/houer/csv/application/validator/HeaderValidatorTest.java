@@ -3,6 +3,7 @@ package com.kleberrhuan.houer.csv.application.validator;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.kleberrhuan.houer.csv.application.service.CsvColumnMetadataService;
 import com.kleberrhuan.houer.csv.domain.exception.HeaderValidationException;
 import com.kleberrhuan.houer.csv.domain.model.CsvSchoolColumn;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ class HeaderValidatorTest {
 
   @BeforeEach
   void setUp() {
-    headerValidator = new HeaderValidator();
+    headerValidator = new HeaderValidator(new CsvColumnMetadataService());
 
     // Cria header válido com todas as colunas do enum
     validHeader =

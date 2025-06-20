@@ -1,6 +1,7 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.csv.application.validator;
 
+import com.kleberrhuan.houer.csv.application.service.CsvColumnMetadataService;
 import com.kleberrhuan.houer.csv.domain.model.CsvSchoolColumn;
 import java.util.Arrays;
 import java.util.Set;
@@ -11,7 +12,9 @@ public class HeaderValidatorDebugTest {
 
   @Test
   public void debugHeaderValidation() {
-    HeaderValidator validator = new HeaderValidator();
+    HeaderValidator validator = new HeaderValidator(
+      new CsvColumnMetadataService()
+    );
 
     Set<String> expectedColumns = Arrays
       .stream(CsvSchoolColumn.values())
