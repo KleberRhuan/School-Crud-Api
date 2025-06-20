@@ -38,14 +38,20 @@ public class SchoolQueryService {
   private final PageableFactory pageableFactory;
 
   @Transactional(readOnly = true)
-  @Cacheable(cacheNames = "schoolsPage", key = "#filter.hashCode() + ':' + #pageable.page + ':' + #pageable.size", unless = "#result.content.isEmpty()")
+  @Cacheable(
+          cacheNames = "schoolsPage",
+          key = "#filter.hashCode() + ':' + #pageable.page + ':' + #pageable.size",
+          unless = "#result.content.isEmpty()"
+  )
   public PaginatedResponse<List<SchoolDto>> findAllSchoolsWithCache(
           SchoolFilterSpec filter,
-          PageableRequest pageable) {
+          PageableRequest pageable
+  ) {
     log.debug(
             "Buscando escolas com filtros: {} e paginação: {}",
             filter,
-            pageable);
+            pageable
+    );
 
     Specification<School> spec = specificationFactory.byFilter(filter);
     var p = pageableFactory.createForSchool(pageable);
@@ -56,7 +62,8 @@ public class SchoolQueryService {
     log.debug(
             "Encontradas {} escolas na página {}",
             schoolDtoPage.getContent().size(),
-            schoolDtoPage.getNumber());
+            schoolDtoPage.getNumber()
+    );
 
     return PaginatedResponse.of(schoolDtoPage);
   }
@@ -74,7 +81,10 @@ public class SchoolQueryService {
   }
 
   @Transactional
-  @CacheEvict(cacheNames = {"schoolsPage", "metricCatalog"}, allEntries = true)
+  @CacheEvict(
+          cacheNames = {"schoolsPage", "metricCatalog"},
+          allEntries = true
+  )
   public void deleteSchool(Long code) {
     School school = schoolRepository
             .findById(code)

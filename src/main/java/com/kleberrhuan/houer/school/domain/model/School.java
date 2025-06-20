@@ -3,15 +3,13 @@ package com.kleberrhuan.houer.school.domain.model;
 
 import com.kleberrhuan.houer.common.infra.persistence.Auditable;
 import jakarta.persistence.*;
-import java.util.Map;
-import java.util.Objects;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.proxy.HibernateProxy;
+
+import java.util.Map;
+import java.util.Objects;
 
 /** Entidade que representa uma escola com seus dados básicos. */
 @Entity
@@ -20,6 +18,7 @@ import org.hibernate.proxy.HibernateProxy;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
+@Setter
 @NamedEntityGraph(
   name = "School.withMetrics",
   attributeNodes = @NamedAttributeNode("schoolMetrics")

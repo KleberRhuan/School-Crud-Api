@@ -40,21 +40,21 @@ public class CsvImportWebSocketController {
     getUserId(header)
             .ifPresentOrElse(
                     userId -> {
-                      UUID uuid = parseJobId(jobId, userId);
-                      if (uuid == null) return;
+                        UUID uuid = parseJobId(jobId, userId);
+                        if (uuid == null) return;
 
-                      CsvImportJob job = fetchAndAuthorize(uuid, userId);
-                      if (job == null) return;
+                        CsvImportJob job = fetchAndAuthorize(uuid, userId);
+                        if (job == null) return;
 
-                      subscriptions
-                              .computeIfAbsent(userId, id -> ConcurrentHashMap.newKeySet())
-                              .add(uuid);
+                        subscriptions
+                                .computeIfAbsent(userId, id -> ConcurrentHashMap.newKeySet())
+                                .add(uuid);
 
-                      sendNotification(
-                              userId,
-                              buildNotification(job, "Inscrito com sucesso no job " + jobId)
-                      );
-                      log.info("Usuário {} inscrito no job {}", userId, jobId);
+                        sendNotification(
+                                userId,
+                                buildNotification(job, "Inscrito com sucesso no job " + jobId)
+                        );
+                        log.info("Usuário {} inscrito no job {}", userId, jobId);
                     },
                     () -> log.warn("Tentativa de subscrição sem autenticação")
             );
@@ -68,29 +68,29 @@ public class CsvImportWebSocketController {
     getUserId(header)
             .ifPresentOrElse(
                     userId -> {
-                      UUID uuid = parseJobId(jobId, userId);
-                      if (uuid != null) {
-                        subscriptions
-                                .getOrDefault(userId, Collections.emptySet())
-                                .remove(uuid);
-                      }
+                        UUID uuid = parseJobId(jobId, userId);
+                        if (uuid != null) {
+                            subscriptions
+                                    .getOrDefault(userId, Collections.emptySet())
+                                    .remove(uuid);
+                        }
 
-                      sendNotification(
-                              userId,
-                              new CsvImportNotification(
-                                      null,
-                                      userId,
-                                      null,
-                                      null,
-                                      0,
-                                      0,
-                                      0,
-                                      "Subscrição cancelada para job " + jobId,
-                                      MSG_INFO,
-                                      Instant.now()
-                              )
-                      );
-                      log.info("Usuário {} cancelou job {}", userId, jobId);
+                        sendNotification(
+                                userId,
+                                new CsvImportNotification(
+                                        null,
+                                        userId,
+                                        null,
+                                        null,
+                                        0,
+                                        0,
+                                        0,
+                                        "Subscrição cancelada para job " + jobId,
+                                        MSG_INFO,
+                                        Instant.now()
+                                )
+                        );
+                        log.info("Usuário {} cancelou job {}", userId, jobId);
                     },
                     () -> log.warn("Tentativa de cancelamento sem autenticação")
             );
@@ -104,23 +104,23 @@ public class CsvImportWebSocketController {
     getUserId(header)
             .ifPresentOrElse(
                     userId -> {
-                      String jobId = payload.get("jobId");
-                      if (jobId == null || jobId.isBlank()) {
-                        sendError(userId, "ID do job é obrigatório");
-                        return;
-                      }
+                        String jobId = payload.get("jobId");
+                        if (jobId == null || jobId.isBlank()) {
+                            sendError(userId, "ID do job é obrigatório");
+                            return;
+                        }
 
-                      UUID uuid = parseJobId(jobId, userId);
-                      if (uuid == null) return;
+                        UUID uuid = parseJobId(jobId, userId);
+                        if (uuid == null) return;
 
-                      CsvImportJob job = fetchAndAuthorize(uuid, userId);
-                      if (job == null) return;
+                        CsvImportJob job = fetchAndAuthorize(uuid, userId);
+                        if (job == null) return;
 
-                      sendNotification(
-                              userId,
-                              buildNotification(job, "Status atual do job " + jobId)
-                      );
-                      log.debug("Status do job {} enviado para {}", jobId, userId);
+                        sendNotification(
+                                userId,
+                                buildNotification(job, "Status atual do job " + jobId)
+                        );
+                        log.debug("Status do job {} enviado para {}", jobId, userId);
                     },
                     () -> log.warn("Tentativa de solicitar status sem autenticação")
             );
@@ -131,22 +131,22 @@ public class CsvImportWebSocketController {
     getUserId(header)
             .ifPresentOrElse(
                     userId -> {
-                      sendNotification(
-                              userId,
-                              new CsvImportNotification(
-                                      null,
-                                      userId,
-                                      null,
-                                      null,
-                                      0,
-                                      0,
-                                      0,
-                                      "Para listar jobs, use GET /api/v1/csv/jobs",
-                                      MSG_INFO,
-                                      Instant.now()
-                              )
-                      );
-                      log.debug("Sugestão de REST enviada para {}", userId);
+                        sendNotification(
+                                userId,
+                                new CsvImportNotification(
+                                        null,
+                                        userId,
+                                        null,
+                                        null,
+                                        0,
+                                        0,
+                                        0,
+                                        "Para listar jobs, use GET /api/v1/csv/jobs",
+                                        MSG_INFO,
+                                        Instant.now()
+                                )
+                        );
+                        log.debug("Sugestão de REST enviada para {}", userId);
                     },
                     () -> log.warn("Tentativa de listar jobs sem autenticação")
             );
