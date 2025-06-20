@@ -2,7 +2,6 @@
 package com.kleberrhuan.houer.common.application.service;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,13 +15,15 @@ public class EmailRateLimitService {
   @Qualifier("emailRateLimitCache")
   private final Cache<String, Integer> rateLimitCache;
 
-  @Value("${app.concurrency.email.rate-limit.max-per-hour:3}")
+  @Value("${app.concurrency.email.rate-limit.max-per-hour:15}")
   private int maxEmailsPerHour;
 
   @Value("${app.concurrency.email.rate-limit.enabled:true}")
   private boolean rateLimitEnabled;
-  
-  public EmailRateLimitService(@Qualifier("emailRateLimitCache") Cache<String, Integer> rateLimitCache) {
+
+  public EmailRateLimitService(
+    @Qualifier("emailRateLimitCache") Cache<String, Integer> rateLimitCache
+  ) {
     this.rateLimitCache = rateLimitCache;
   }
 
@@ -47,7 +48,6 @@ public class EmailRateLimitService {
       return false;
     }
 
-    // Incrementar contador
     rateLimitCache.put(rateLimitKey, count + 1);
 
     log.debug(

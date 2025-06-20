@@ -47,7 +47,7 @@ public class BatchConfiguration {
     SchoolItemWriter itemWriter
   ) {
     return new StepBuilder("schoolImportStep", jobRepository)
-      .<CsvSchoolRecord, CsvSchoolRecord>chunk(2_000, transactionManager)
+      .<CsvSchoolRecord, CsvSchoolRecord>chunk(1_000, transactionManager)
       .reader(csvSchoolReader)
       .processor(itemProcessor)
       .writer(itemWriter)
@@ -56,12 +56,11 @@ public class BatchConfiguration {
       .build();
   }
 
-  /** Executor de tarefas para processamento paralelo. */
   @Bean
   public TaskExecutor batchTaskExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(4);
-    executor.setMaxPoolSize(8);
+    executor.setCorePoolSize(3);
+    executor.setMaxPoolSize(3);
     executor.setQueueCapacity(100);
     executor.setThreadNamePrefix("batch-school-");
     executor.setWaitForTasksToCompleteOnShutdown(true);

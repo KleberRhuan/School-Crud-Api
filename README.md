@@ -15,7 +15,7 @@ O sistema permite:
 
 ### Backend
 
-- **Java 21** + **Spring Boot 3.4** (Framework principal)
+- **Java 21** + **Spring Boot 3.5** (Framework principal)
 - **Spring Security** com JWT (Autenticação)
 - **PostgreSQL** (Banco de dados relacional)
 - **Spring Batch** (Processamento de CSV)

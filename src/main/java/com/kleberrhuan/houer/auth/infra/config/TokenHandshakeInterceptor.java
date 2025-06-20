@@ -3,6 +3,8 @@ package com.kleberrhuan.houer.auth.infra.config;
 
 import com.kleberrhuan.houer.auth.domain.exception.AuthException;
 import com.kleberrhuan.houer.auth.infra.security.jwt.JwtToAuthConverter;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +34,14 @@ public class TokenHandshakeInterceptor implements HandshakeInterceptor {
     @NotNull WebSocketHandler wsHandler,
     @NotNull Map<String, Object> attributes
   ) {
+    log.debug("WebSocket handshake attempt for URI: {}", request.getURI());
+
     String token = getTokenFromQuery(request);
+    log.debug("Token from query: {}", token != null ? "FOUND" : "NOT FOUND");
 
     if (token == null) {
       token = getTokenFromHeader(request);
+      log.debug("Token from header: {}", token != null ? "FOUND" : "NOT FOUND");
     }
 
     if (token != null && isValidToken(token)) {
@@ -63,6 +69,7 @@ public class TokenHandshakeInterceptor implements HandshakeInterceptor {
 
   private String getTokenFromQuery(ServerHttpRequest request) {
     String query = request.getURI().getQuery();
+    log.debug("Query string: {}", query);
     if (query != null) {
       return extractTokenFromQuery(query);
     }
@@ -71,6 +78,7 @@ public class TokenHandshakeInterceptor implements HandshakeInterceptor {
 
   private String getTokenFromHeader(ServerHttpRequest request) {
     String auth = request.getHeaders().getFirst("Authorization");
+    log.debug("Authorization header: {}", auth != null ? "Bearer ***" : "NULL");
     if (auth != null && auth.startsWith("Bearer ")) {
       return auth.substring(7);
     }
@@ -82,7 +90,12 @@ public class TokenHandshakeInterceptor implements HandshakeInterceptor {
     for (String pair : pairs) {
       String[] keyValue = pair.split("=");
       if (keyValue.length == 2 && "token".equals(keyValue[0])) {
-        return keyValue[1];
+        try {
+          return URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8);
+        } catch (Exception e) {
+          log.debug("Failed to decode token from query: {}", e.getMessage());
+          return keyValue[1];
+        }
       }
     }
     return null;

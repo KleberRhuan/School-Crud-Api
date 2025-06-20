@@ -5,6 +5,8 @@ import static com.kleberrhuan.houer.csv.domain.constants.CsvImportConstants.Jobs
 
 import com.kleberrhuan.houer.csv.application.service.CsvImportService;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.ExitStatus;
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Component;
 public class CsvImportStepListener implements StepExecutionListener {
 
   private final CsvImportService importService;
+  private final ConcurrentHashMap<UUID, ReentrantLock> progressLocks =
+    new ConcurrentHashMap<>();
 
   @Override
   public void beforeStep(StepExecution stepExecution) {
@@ -43,15 +47,35 @@ public class CsvImportStepListener implements StepExecutionListener {
       long writeCount = stepExecution.getWriteCount();
       long skipCount = stepExecution.getSkipCount();
 
-      importService.updateJobProgress(jobId, (int) writeCount, (int) skipCount);
-
-      log.info(
-        "Step concluído para job {}: lidos={}, escritos={}, errors={}",
+      ReentrantLock lock = progressLocks.computeIfAbsent(
         jobId,
-        readCount,
-        writeCount,
-        skipCount
+        k -> new ReentrantLock()
       );
+      lock.lock();
+      try {
+        importService.updateJobProgress(
+          jobId,
+          (int) writeCount,
+          (int) skipCount
+        );
+
+        log.info(
+          "Step concluído para job {}: lidos={}, escritos={}, errors={}",
+          jobId,
+          readCount,
+          writeCount,
+          skipCount
+        );
+      } finally {
+        lock.unlock();
+
+        if (
+          ExitStatus.COMPLETED.equals(stepExecution.getExitStatus()) ||
+          ExitStatus.FAILED.equals(stepExecution.getExitStatus())
+        ) {
+          progressLocks.remove(jobId);
+        }
+      }
     }
 
     return stepExecution.getExitStatus();

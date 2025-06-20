@@ -45,7 +45,7 @@ public class WebSocketConfiguration
       .setClientLibraryUrl(
         "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"
       );
-    
+
     registry
       .addEndpoint("/ws-native")
       .setAllowedOriginPatterns(allowedOrigins.split(","))

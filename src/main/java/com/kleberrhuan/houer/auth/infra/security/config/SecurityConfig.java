@@ -61,13 +61,12 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/webjars/**",
             "/ws/**",
-            "/ws"
+            "/ws",
+            "/ws-native",
+            "/ws-native/**"
           )
           .permitAll();
         a.requestMatchers(HttpMethod.GET, "/actuator/**").permitAll();
-        a
-          .requestMatchers(HttpMethod.POST, "/api/v1/schools/**")
-          .hasRole(Role.ADMIN.getName());
         a
           .requestMatchers(HttpMethod.PUT, "/api/v1/schools/**")
           .hasRole(Role.ADMIN.getName());

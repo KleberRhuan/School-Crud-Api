@@ -44,7 +44,7 @@ public class OutboxMessage {
       .body(n.message())
       .channel(n.channel())
       .attempts(0)
-      .nextAttemptAt(Instant.now().plus(Duration.ofMinutes(10)))
+      .nextAttemptAt(Instant.now().plus(Duration.ofSeconds(30))) // Reduz de 10min para 30s
       .build();
   }
 

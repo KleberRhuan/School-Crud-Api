@@ -1,6 +1,7 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.common.infra.config;
 
+import java.util.concurrent.ThreadPoolExecutor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -16,10 +17,17 @@ public class AsyncConfig {
   @Bean(name = "mailTaskExecutor")
   public TaskExecutor mailTaskExecutor() {
     var executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(4);
-    executor.setMaxPoolSize(16);
-    executor.setQueueCapacity(100);
+
+    executor.setCorePoolSize(8);
+    executor.setMaxPoolSize(24);
+    executor.setQueueCapacity(500);
     executor.setThreadNamePrefix("MailExecutor‑");
+    executor.setWaitForTasksToCompleteOnShutdown(true);
+    executor.setAwaitTerminationSeconds(60);
+    executor.setRejectedExecutionHandler(
+      new ThreadPoolExecutor.CallerRunsPolicy()
+    );
+
     executor.initialize();
     return executor;
   }
