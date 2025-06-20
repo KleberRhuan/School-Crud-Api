@@ -91,11 +91,17 @@ public class CsvImportService {
     }
     jobRepository.save(job);
 
-    CsvImportNotification notification = CsvImportNotificationFactory.of(
-      job,
-      status,
-      statusMessage(status, errorMessage)
-    );
+    CsvImportNotification notification =
+      switch (status) {
+        case RUNNING -> CsvImportNotificationFactory.started(job);
+        case COMPLETED -> CsvImportNotificationFactory.completed(job);
+        case FAILED -> CsvImportNotificationFactory.failed(job, errorMessage);
+        default -> CsvImportNotificationFactory.of(
+          job,
+          status,
+          statusMessage(status, errorMessage)
+        );
+      };
 
     notificationService.send(notification);
   }

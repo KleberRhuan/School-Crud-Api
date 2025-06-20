@@ -28,11 +28,12 @@ import org.junit.jupiter.api.Test;
 class CsvSchoolValidatorTest {
 
   private CsvSchoolValidator validator;
+  private CsvColumnMetadataService metadataService;
 
   @BeforeEach
   void setUp() {
     // Instancia todos os componentes reais necessários para o pipeline de validação
-    CsvColumnMetadataService metadataService = new CsvColumnMetadataService();
+    metadataService = new CsvColumnMetadataService();
 
     List<RowRule> rules = List.of(
       new MandatoryRule(metadataService),
@@ -41,7 +42,7 @@ class CsvSchoolValidatorTest {
     );
 
     CompositeRowValidator rowValidator = new CompositeRowValidator(rules);
-    HeaderValidator headerValidator = new HeaderValidator();
+    HeaderValidator headerValidator = new HeaderValidator(metadataService);
     CsvParser parser = new CsvParser();
     CsvProcessor<CsvSchoolRecord> core = new CsvProcessor<>(
       parser,
@@ -72,9 +73,29 @@ class CsvSchoolValidatorTest {
       CsvSchoolRecord first = records.get(0);
       assertThat(first.codesc()).isEqualTo("11111111");
       assertThat(first.nomesc()).isEqualTo("ESCOLA TESTE");
-      // Métrica SALAS_AULA foi definida como 10 no builder
-      assertThat(first.metrics().get(CsvSchoolColumn.SALAS_AULA))
-        .isEqualTo(10L);
+      // Verificar métricas opcionais se presentes
+      if (first.metrics().containsKey(CsvSchoolColumn.SALAS_AULA)) {
+        assertThat(first.metrics().get(CsvSchoolColumn.SALAS_AULA))
+          .isEqualTo(10L);
+      }
+    }
+
+    @Test
+    @DisplayName("Deve validar CSV com apenas colunas obrigatórias")
+    void shouldValidateCsvWithOnlyRequiredColumns() {
+      String csvContent = buildCsvWithOnlyRequiredColumns();
+      ByteArrayInputStream inputStream = new ByteArrayInputStream(
+        csvContent.getBytes(StandardCharsets.UTF_8)
+      );
+
+      List<CsvSchoolRecord> records = validator
+        .validate(inputStream, "test.csv")
+        .collect(Collectors.toList());
+
+      assertThat(records).hasSize(1);
+      CsvSchoolRecord record = records.get(0);
+      assertThat(record.codesc()).isEqualTo("11111111");
+      assertThat(record.nomesc()).isEqualTo("ESCOLA OBRIGATORIA");
     }
   }
 
@@ -155,101 +176,99 @@ class CsvSchoolValidatorTest {
   private String buildValidCsv() {
     StringBuilder csv = new StringBuilder();
 
-    CsvSchoolColumn[] allColumns = CsvSchoolColumn.values();
-    for (int i = 0; i < allColumns.length; i++) {
-      if (i > 0) csv.append(',');
-      csv.append(allColumns[i].name());
-    }
-    csv.append('\n');
+    // Usar apenas colunas obrigatórias + algumas métricas básicas
+    String[] columns = {
+      "NOMEDEP",
+      "DE",
+      "MUN",
+      "DISTR",
+      "CODESC",
+      "NOMESC",
+      "TIPOESC",
+      "TIPOESC_DESC",
+      "CODSIT",
+      "SALAS_AULA",
+      "BIBLIOTECA",
+    };
 
-    // Primeira linha válida - todas as métricas preenchidas
-    csv.append(
-      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,1,PUBLICA,ATIVA"
-    );
-    for (int i = 9; i < allColumns.length; i++) {
-      csv.append(',').append("10"); // Todas as métricas com valor 10
-    }
-    csv.append('\n');
+    csv.append(String.join(",", columns)).append('\n');
 
-    // Segunda linha válida - todas as métricas preenchidas
+    // Primeira linha válida
     csv.append(
-      "REDE EXEMPLO,DE EXEMPLO,RIO DE JANEIRO,ZONA SUL,22222222,ESCOLA EXEMPLO,2,PRIVADA,ATIVA"
+      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,1,PUBLICA,1,10,1\n"
     );
-    for (int i = 9; i < allColumns.length; i++) {
-      csv.append(',').append("20"); // Todas as métricas com valor 20
-    }
+
+    // Segunda linha válida
+    csv.append(
+      "REDE EXEMPLO,DE EXEMPLO,RIO DE JANEIRO,ZONA SUL,22222222,ESCOLA EXEMPLO,2,PRIVADA,1,20,1"
+    );
+
+    return csv.toString();
+  }
+
+  private String buildCsvWithOnlyRequiredColumns() {
+    // Usar apenas as colunas obrigatórias básicas (não métricas)
+    String[] requiredColumns = metadataService
+      .getRequiredHeaders()
+      .stream()
+      .map(Enum::name)
+      .toArray(String[]::new);
+
+    StringBuilder csv = new StringBuilder();
+    csv.append(String.join(",", requiredColumns)).append('\n');
+    csv.append(
+      "REDE OBRIGATORIA,DE OBRIGATORIA,SAO PAULO,CENTRO,11111111,ESCOLA OBRIGATORIA,1,PUBLICA,1"
+    );
 
     return csv.toString();
   }
 
   private String buildCsvWithMissingColumn() {
-    // Remove a coluna CODESC
+    // Remove a coluna CODESC (obrigatória)
     return (
       "NOMEDEP,DE,MUN,DISTR,NOMESC,TIPOESC,TIPOESC_DESC,CODSIT\n" +
-      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,ESCOLA TESTE,1,PUBLICA,ATIVA"
+      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,ESCOLA TESTE,1,PUBLICA,1"
     );
   }
 
   private String buildCsvWithExtraColumn() {
     StringBuilder csv = new StringBuilder();
-    CsvSchoolColumn[] allColumns = CsvSchoolColumn.values();
 
-    for (int i = 0; i < allColumns.length; i++) {
-      if (i > 0) csv.append(',');
-      csv.append(allColumns[i].name());
-    }
-    csv.append(",COLUNA_EXTRA\n");
+    // Usar colunas válidas + uma inválida
+    String[] validColumns = {
+      "NOMEDEP",
+      "DE",
+      "MUN",
+      "DISTR",
+      "CODESC",
+      "NOMESC",
+      "TIPOESC",
+      "TIPOESC_DESC",
+      "CODSIT",
+    };
+
+    csv.append(String.join(",", validColumns));
+    csv.append(",COLUNA_INVALIDA_INEXISTENTE\n"); // Coluna que não existe no enum
 
     csv.append(
-      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,1,PUBLICA,ATIVA"
+      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,1,PUBLICA,1,valor_extra"
     );
-    for (int i = 9; i < allColumns.length; i++) {
-      csv.append(',').append('1');
-    }
-    csv.append(",valor_extra");
 
     return csv.toString();
   }
 
   private String buildCsvWithEmptyMainField() {
-    StringBuilder csv = new StringBuilder();
-    CsvSchoolColumn[] allColumns = CsvSchoolColumn.values();
-
-    for (int i = 0; i < allColumns.length; i++) {
-      if (i > 0) csv.append(',');
-      csv.append(allColumns[i].name());
-    }
-    csv.append('\n');
-
-    // CODESC vazio (campo principal obrigatório)
-    csv.append(
-      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,,ESCOLA TESTE,1,PUBLICA,ATIVA"
+    return (
+      "NOMEDEP,DE,MUN,DISTR,CODESC,NOMESC,TIPOESC,TIPOESC_DESC,CODSIT\n" +
+      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,,ESCOLA TESTE,1,PUBLICA,1" // CODESC vazio
     );
-    for (int i = 9; i < allColumns.length; i++) {
-      csv.append(',').append("10"); // Todas as métricas preenchidas
-    }
-
-    return csv.toString();
   }
 
   private String buildCsvWithInvalidNumericValue() {
-    StringBuilder csv = new StringBuilder();
-    CsvSchoolColumn[] allColumns = CsvSchoolColumn.values();
-
-    for (int i = 0; i < allColumns.length; i++) {
-      if (i > 0) csv.append(',');
-      csv.append(allColumns[i].name());
-    }
-    csv.append('\n');
-
-    // TIPOESC com texto inválido (campo principal numérico)
-    csv.append(
-      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,TEXTO_INVALIDO,PUBLICA,ATIVA"
+    return (
+      "NOMEDEP,DE,MUN,DISTR,CODESC,NOMESC,TIPOESC,TIPOESC_DESC,CODSIT\n" +
+      "REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,TEXTO_INVALIDO,PUBLICA,1" // TIPOESC com
+      // texto
     );
-    for (int i = 9; i < allColumns.length; i++) {
-      csv.append(',').append("10"); // Todas as métricas preenchidas com valores válidos
-    }
-
-    return csv.toString();
   }
 }

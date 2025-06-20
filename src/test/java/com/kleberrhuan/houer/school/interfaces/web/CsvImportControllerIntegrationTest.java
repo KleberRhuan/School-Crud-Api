@@ -5,12 +5,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kleberrhuan.houer.config.TestSecurityConfig;
 import com.kleberrhuan.houer.csv.domain.model.ImportJobStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@Import(TestSecurityConfig.class)
 @DisplayName("CsvImportController Integration Tests")
 class CsvImportControllerIntegrationTest {
 
@@ -37,9 +40,9 @@ class CsvImportControllerIntegrationTest {
     // Given
     String csvContent =
       """
-        NOMEDEP,DE,MUN,DISTR,CODESC,NOMESC,TIPOESC,TIPOESC_DESC,SITUACAO,SALAS_AULA,SALAS_ED_INF,BIBLIOTECA
-        REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,1,PUBLICA,ATIVA,10,2,1
-        REDE EXEMPLO,DE EXEMPLO,SAO PAULO,ZONA SUL,22222222,ESCOLA EXEMPLO,1,PUBLICA,ATIVA,8,1,1
+        NOMEDEP,DE,MUN,DISTR,CODESC,NOMESC,TIPOESC,TIPOESC_DESC,CODSIT,SALAS_AULA
+        REDE TESTE,DE TESTE,SAO PAULO,CENTRO,11111111,ESCOLA TESTE,1,PUBLICA,ATIVA,10
+        REDE EXEMPLO,DE EXEMPLO,SAO PAULO,ZONA SUL,22222222,ESCOLA EXEMPLO,1,PUBLICA,ATIVA,8
         """;
 
     MockMultipartFile file = new MockMultipartFile(

@@ -6,14 +6,16 @@ import com.kleberrhuan.houer.csv.interfaces.dto.CsvImportNotification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
-/**
- * Consumidor responsável por receber notificações de progresso do processamento CSV. Propaga essas notificações via
- * WebSocket para atualização em tempo real na interface.
- */
 @Component
+@ConditionalOnProperty(
+  name = "app.csv.rabbitmq.notifications.enabled",
+  havingValue = "true",
+  matchIfMissing = false
+)
 @RequiredArgsConstructor
 @Slf4j
 public class CsvNotificationConsumer {
@@ -23,7 +25,7 @@ public class CsvNotificationConsumer {
   @RabbitListener(queues = CsvImportConstants.Queues.CSV_NOTIFICATION_QUEUE)
   public void receiveNotification(CsvImportNotification notification) {
     log.debug(
-      "Notification received - Job: {}, Status: {}, Progress: {}/{}",
+      "Notification received from RabbitMQ - Job: {}, Status: {}, Progress: {}/{}",
       notification.jobId(),
       notification.status(),
       notification.processedRecords(),
@@ -34,5 +36,7 @@ public class CsvNotificationConsumer {
       "/topic/csv-import/" + notification.jobId(),
       notification
     );
+
+    log.debug("Notification forwarded to WebSocket from RabbitMQ");
   }
 }
