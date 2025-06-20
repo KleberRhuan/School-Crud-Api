@@ -23,7 +23,7 @@ public class WebSocketConfiguration
   implements WebSocketMessageBrokerConfigurer {
 
   @Value(
-    "${school.import.websocket.allowed-origins:http://localhost:3000,http://localhost:3001}"
+    "${school.import.websocket.allowed-origins:http://localhost:3000,http://localhost:3001,https://houer-test.rhuan.cloud}"
   )
   private String allowedOrigins;
 
@@ -36,6 +36,7 @@ public class WebSocketConfiguration
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
+    // Endpoint principal com SockJS habilitado
     registry
       .addEndpoint("/ws")
       .setAllowedOriginPatterns(allowedOrigins.split(","))
@@ -43,6 +44,14 @@ public class WebSocketConfiguration
       .setHeartbeatTime(25000) // Heartbeat SockJS
       .setDisconnectDelay(30000) // Timeout para desconexão
       .setHttpMessageCacheSize(1000) // Cache de mensagens HTTP
-      .setStreamBytesLimit(128 * 1024); // Limite de bytes por stream
+      .setStreamBytesLimit(128 * 1024) // Limite de bytes por stream
+      .setClientLibraryUrl(
+        "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"
+      ); // SockJS via HTTPS
+
+    // Endpoint nativo WebSocket (sem SockJS) - funciona melhor com HTTPS
+    registry
+      .addEndpoint("/ws-native")
+      .setAllowedOriginPatterns(allowedOrigins.split(","));
   }
 }
