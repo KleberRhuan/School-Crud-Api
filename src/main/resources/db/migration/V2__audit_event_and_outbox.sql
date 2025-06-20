@@ -19,7 +19,7 @@ DO $$
         END IF;
     END$$;
 
-CREATE TABLE audit.audit_event (
+CREATE TABLE IF NOT EXISTS audit.audit_event (
                                    id          BIGSERIAL PRIMARY KEY,
                                    entity      VARCHAR(120)  NOT NULL,
                                    entity_id   TEXT,
@@ -32,13 +32,13 @@ CREATE TABLE audit.audit_event (
                                    payload     JSONB
 );
 
-CREATE INDEX idx_audit_event_entity_id
+CREATE INDEX IF NOT EXISTS idx_audit_event_entity_id
     ON audit.audit_event(entity, entity_id);
 
-CREATE INDEX idx_audit_event_ts
+CREATE INDEX IF NOT EXISTS idx_audit_event_ts
     ON audit.audit_event(ts DESC);
 
-CREATE INDEX idx_audit_event_payload_gin
+CREATE INDEX IF NOT EXISTS idx_audit_event_payload_gin
     ON audit.audit_event USING gin (payload);
 
 /* =====================================================================
@@ -54,7 +54,7 @@ DO $$
         END IF;
     END$$;
 
-CREATE TABLE config.notification_outbox (
+CREATE TABLE IF NOT EXISTS config.notification_outbox (
                                             id              UUID       PRIMARY KEY            DEFAULT gen_random_uuid(),
                                             recipient       CITEXT     NOT NULL,
                                             subject         TEXT       NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE config.notification_outbox (
                                             attempts        INT         NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_outbox_due
+CREATE INDEX IF NOT EXISTS idx_outbox_due
     ON config.notification_outbox (next_attempt_at ASC);
 
 COMMENT ON TABLE audit.audit_event IS

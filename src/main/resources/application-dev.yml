@@ -1,7 +1,6 @@
 # src/main/resources/application-dev.yml
 spring:
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/houer}
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
@@ -34,6 +33,16 @@ spring:
         format_sql: true
         use_sql_comments: true
         generate_statistics: false
+        hbm2ddl:
+          auto: none
+        # Desabilita schema validation
+        jakarta:
+          persistence:
+            schema-generation:
+              scripts:
+                action: none
+              database:
+                action: none
     generate-ddl: false
 
 # Configurações de logging

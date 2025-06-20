@@ -2,7 +2,7 @@
 -- Responsável por armazenar os dicionários de métricas das escolas
 CREATE SCHEMA IF NOT EXISTS school;
 
-CREATE TABLE school.metric_dictionary (
+CREATE TABLE IF NOT EXISTS school.metric_dictionary (
   metric_code  TEXT PRIMARY KEY,
   metric_name  TEXT NOT NULL,
   data_type    TEXT NOT NULL CHECK (data_type IN ('INT'))

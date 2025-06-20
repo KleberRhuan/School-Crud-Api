@@ -16,7 +16,7 @@ spring:
   # JPA configuração para testes
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -25,6 +25,13 @@ spring:
           time_zone: UTC
         format_sql: false
         default_schema: PUBLIC
+
+  # Habilitar inicialização do schema para testes
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: false
 
   # Desabilitar funcionalidades desnecessárias para testes
   flyway:
@@ -50,17 +57,36 @@ spring:
     console:
       enabled: false
 
+  # Configurações de segurança para testes
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          authorities-claim-name: scope
+          authority-prefix: ROLE_
+
+# Configurações JWT para testes
+jwt:
+  public-key: classpath:certificates/public.pub
+  private-key: classpath:certificates/private.pem
+  access-ttl-sec: 900
+  refresh-ttl-sec: 604800
+  issuer: test-issuer
+
 # Configurações de logging para testes
 logging:
   level:
     com.kleberrhuan.houer: INFO
     org.springframework: WARN
     org.hibernate: WARN
+    org.springframework.security: DEBUG
 
-# Desabilitar métricas para testes
+# Habilitar métricas mínimas para testes (necessário para PostValidationFilter)
 management:
   endpoints:
     enabled-by-default: false
+  metrics:
+    enabled: true # Habilitado para permitir criação do PostValidationFilter
   prometheus:
     metrics:
       export:
@@ -73,3 +99,38 @@ app:
     import:
       batch-size: 100
       thread-pool-size: 2
+    storage:
+      base-dir: target/test-uploads
+      create-directories: true
+      delete-after-processing: false
+
+  # Configurações do Rate Limiting para testes
+  rate-limit:
+    enabled: false # Desabilitado para testes
+    requests-per-minute: 100
+    auth-requests-per-minute: 50
+    time-window-minutes: 1
+    requests-per-hour: 1000
+    time-window-hours: 1
+
+  # Configurações do Houer para cache
+  houer:
+    url: http://localhost:8080
+    caches:
+      default:
+        ttl: 30m
+        max-size: 100
+      rate-limit:
+        ttl: 1m
+        max-size: 1000
+      jwt-blacklist:
+        ttl: 15m
+        max-size: 1000
+
+auth:
+  reset:
+    code-length: 6
+    ttl-in-seconds: 300
+    max-attempts-per-hour: 5
+  cache:
+    provider: caffeine

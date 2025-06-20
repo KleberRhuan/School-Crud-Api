@@ -3,7 +3,7 @@
 
 CREATE SCHEMA IF NOT EXISTS school;
 
-CREATE TABLE school.school (
+CREATE TABLE IF NOT EXISTS school.school (
   code          BIGSERIAL PRIMARY KEY,  -- Código da escola (CODESC)
   nome_dep      TEXT,                 -- Nome da rede de ensino (NOMEDEP)
   de            TEXT,                 -- Nome da diretoria de ensino (DE)
@@ -25,10 +25,10 @@ CREATE TABLE school.school (
 );
 
 -- Índices para performance
-CREATE INDEX idx_school_mun ON school.school(mun);
-CREATE INDEX idx_school_tipo_esc ON school.school(tipo_esc);
-CREATE INDEX idx_school_codsit ON school.school(codsit);
-CREATE INDEX idx_school_deleted ON school.school(deleted);
+CREATE INDEX IF NOT EXISTS idx_school_mun ON school.school(mun);
+CREATE INDEX IF NOT EXISTS idx_school_tipo_esc ON school.school(tipo_esc);
+CREATE INDEX IF NOT EXISTS idx_school_codsit ON school.school(codsit);
+CREATE INDEX IF NOT EXISTS idx_school_deleted ON school.school(deleted);
 
 -- Comentários das colunas baseados no dicionário
 COMMENT ON TABLE school.school IS 'Dados básicos das escolas conforme dicionário';

@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 CREATE SCHEMA IF NOT EXISTS account;
 
 /* ============== USERS ====================================================== */
-CREATE TABLE account.users (
+CREATE TABLE IF NOT EXISTS account.users (
                                id            BIGSERIAL PRIMARY KEY,
                                name          VARCHAR(120) NOT NULL,
                                email         CITEXT       NOT NULL,
@@ -28,12 +28,12 @@ CREATE TABLE account.users (
 );
 
 ALTER TABLE account.users
-    ADD CONSTRAINT fk_users_created_by
+    ADD CONSTRAINT IF NOT EXISTS fk_users_created_by
         FOREIGN KEY (created_by) REFERENCES account.users(id)
             ON DELETE SET NULL;
 
 ALTER TABLE account.users
-    ADD CONSTRAINT fk_users_updated_by
+    ADD CONSTRAINT IF NOT EXISTS fk_users_updated_by
         FOREIGN KEY (updated_by) REFERENCES account.users(id)
             ON DELETE SET NULL;
 
@@ -46,12 +46,12 @@ SELECT public.unaccent(lower($1)::text);
 $$;
 
 -- índice trigram usando a função wrapper
-CREATE INDEX idx_users_name_unaccent_ci
+CREATE INDEX IF NOT EXISTS idx_users_name_unaccent_ci
     ON account.users
         USING gin (account.unaccent_lower(name) gin_trgm_ops);
 
 /* ============== USER_ROLES ================================================= */
-CREATE TABLE account.user_roles (
+CREATE TABLE IF NOT EXISTS account.user_roles (
                                     user_id BIGINT      NOT NULL,
                                     role    VARCHAR(50) NOT NULL,
                                     PRIMARY KEY (user_id, role),
@@ -60,7 +60,7 @@ CREATE TABLE account.user_roles (
                                             ON DELETE CASCADE
 );
 
-CREATE INDEX idx_user_roles_role ON account.user_roles(role);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role ON account.user_roles(role);
 
 /* ============== Verification Tokens ================================================= */
 

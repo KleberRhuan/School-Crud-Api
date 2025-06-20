@@ -1,7 +1,7 @@
 -- Migration V7: Criação da tabela school_metrics_jsonb
 -- Responsável por armazenar as métricas das escolas em formato JSONB
 
-CREATE TABLE school.school_metrics_jsonb (
+CREATE TABLE IF NOT EXISTS school.school_metrics_jsonb (
   school_code   bigserial PRIMARY KEY REFERENCES school.school(code) ON DELETE CASCADE,
   metrics       JSONB NOT NULL,
   
@@ -13,7 +13,7 @@ CREATE TABLE school.school_metrics_jsonb (
 );
 
 -- Índices para performance em consultas JSONB
-CREATE INDEX idx_metrics_gin ON school.school_metrics_jsonb
+CREATE INDEX IF NOT EXISTS idx_metrics_gin ON school.school_metrics_jsonb
 USING gin (metrics jsonb_path_ops);
 
 -- Comentários das colunas
