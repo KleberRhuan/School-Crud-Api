@@ -3,6 +3,7 @@ package com.kleberrhuan.houer.auth.interfaces.web;
 
 import com.kleberrhuan.houer.auth.application.service.AuthenticationService;
 import com.kleberrhuan.houer.auth.application.service.RegistrationService;
+import com.kleberrhuan.houer.auth.infra.properties.AuthProperties;
 import com.kleberrhuan.houer.auth.infra.security.jwt.TokenPair;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.LoginRequest;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.RegisterRequest;
@@ -15,7 +16,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -32,9 +32,7 @@ public class AuthController implements AuthControllerDocumentation {
   private static final String COOKIE = "REFRESH_TOKEN";
   private final AuthenticationService auth;
   private final RegistrationService registration;
-
-  @Value("${app.frontend-url}")
-  private String frontendUrl;
+  private final AuthProperties authProperties;
 
   @PostMapping("/login")
   public ResponseEntity<TokenResponse> login(
@@ -61,13 +59,7 @@ public class AuthController implements AuthControllerDocumentation {
     @Valid @RequestBody RegisterRequest dto,
     HttpServletRequest req
   ) {
-    String baseUrl = ServletUriComponentsBuilder
-      .fromRequest(req)
-      .replacePath(null)
-      .build()
-      .toUriString();
-
-    registration.register(dto, baseUrl);
+    registration.register(dto, authProperties.getReset().getFrontendBaseUrl());
   }
 
   @PostMapping("/resend-verification")
@@ -86,10 +78,9 @@ public class AuthController implements AuthControllerDocumentation {
   }
 
   @GetMapping("/verify")
-  @ResponseStatus(HttpStatus.FOUND)
-  public void verify(@RequestParam UUID token, HttpServletResponse res) {
+  public ResponseEntity<Void> verify(@RequestParam UUID token) {
     registration.verify(token);
-    res.setHeader(HttpHeaders.LOCATION, frontendUrl + "/auth/verified");
+    return ResponseEntity.ok().build();
   }
 
   @PostMapping("/refresh")

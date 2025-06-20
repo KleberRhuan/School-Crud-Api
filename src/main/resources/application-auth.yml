@@ -2,7 +2,7 @@ app:
   verification:
     token:
       expiry-hours: 24
-    url-path: /api/v1/auth/verify
+    url-path: /auth/verified
   password-reset:
     token:
       expiry-hours: 2
