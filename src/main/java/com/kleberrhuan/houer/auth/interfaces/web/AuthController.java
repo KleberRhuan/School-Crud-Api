@@ -6,6 +6,7 @@ import com.kleberrhuan.houer.auth.application.service.RegistrationService;
 import com.kleberrhuan.houer.auth.infra.security.jwt.TokenPair;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.LoginRequest;
 import com.kleberrhuan.houer.auth.interfaces.dto.request.RegisterRequest;
+import com.kleberrhuan.houer.auth.interfaces.dto.request.ResendVerificationRequest;
 import com.kleberrhuan.houer.auth.interfaces.dto.response.TokenResponse;
 import com.kleberrhuan.houer.common.interfaces.documentation.controllers.AuthControllerDocumentation;
 import com.kleberrhuan.houer.user.interfaces.dto.response.UserResponse;
@@ -67,6 +68,21 @@ public class AuthController implements AuthControllerDocumentation {
       .toUriString();
 
     registration.register(dto, baseUrl);
+  }
+
+  @PostMapping("/resend-verification")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public void resendVerification(
+    @Valid @RequestBody ResendVerificationRequest dto,
+    HttpServletRequest req
+  ) {
+    String baseUrl = ServletUriComponentsBuilder
+      .fromRequest(req)
+      .replacePath(null)
+      .build()
+      .toUriString();
+
+    registration.resendVerification(dto.email(), baseUrl);
   }
 
   @GetMapping("/verify")

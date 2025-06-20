@@ -17,4 +17,10 @@ public interface VerificationTokenRepository
   @Modifying
   @Query("DELETE FROM VerificationToken vt WHERE vt.expiresAt < :now")
   long deleteByExpiresAtBefore(@Param("now") Instant now);
+
+  @Modifying
+  @Query(
+    "DELETE FROM VerificationToken vt WHERE vt.userId = :userId AND vt.used = false"
+  )
+  void deleteByUserIdAndUsedFalse(@Param("userId") Long userId);
 }
