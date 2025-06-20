@@ -13,10 +13,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-@Mapper(
-  componentModel = "spring",
-  unmappedTargetPolicy = ReportingPolicy.IGNORE
-)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface SchoolMapper {
   @Mapping(target = "code", source = "code")
   @Mapping(target = "schoolName", source = "nomeEsc")
@@ -28,16 +25,8 @@ public interface SchoolMapper {
   @Mapping(target = "schoolTypeDescription", source = "tipoEscDesc")
   @Mapping(target = "situationCode", source = "codsit")
   @Mapping(target = "schoolCode", source = "codesc")
-  @Mapping(
-    target = "createdAt",
-    source = "createdAt",
-    qualifiedByName = "localDateTimeToInstant"
-  )
-  @Mapping(
-    target = "updatedAt",
-    source = "updatedAt",
-    qualifiedByName = "localDateTimeToInstant"
-  )
+  @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "localDateTimeToInstant")
+  @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "localDateTimeToInstant")
   @Mapping(target = "metrics", source = "schoolMetrics")
   SchoolDto toDto(School school);
 
@@ -47,8 +36,6 @@ public interface SchoolMapper {
   @Mapping(target = "updatedAt", ignore = true)
   SchoolMetricsDto metricsToDto(SchoolMetrics metrics);
 
-  @Mapping(target = "code", ignore = true)
-  @Mapping(target = "schoolMetrics", ignore = true)
   @Mapping(target = "nomeEsc", source = "schoolName")
   @Mapping(target = "nomeDep", source = "administrativeDependency")
   @Mapping(target = "de", source = "stateCode")
@@ -58,10 +45,9 @@ public interface SchoolMapper {
   @Mapping(target = "tipoEscDesc", source = "schoolTypeDescription")
   @Mapping(target = "codsit", source = "situationCode")
   @Mapping(target = "codesc", source = "schoolCode")
-  @BeanMapping(
-          nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-  )
-  void updateEntity(@MappingTarget School school, SchoolUpdateRequest request);
+  @Mapping(target = "schoolMetrics", ignore = true)
+  @Mapping(target = "code", source = "code")
+  School toEntity(SchoolCreateRequest request);
 
   @Mapping(target = "nomeEsc", source = "schoolName")
   @Mapping(target = "nomeDep", source = "administrativeDependency")
@@ -72,14 +58,13 @@ public interface SchoolMapper {
   @Mapping(target = "tipoEscDesc", source = "schoolTypeDescription")
   @Mapping(target = "codsit", source = "situationCode")
   @Mapping(target = "codesc", source = "schoolCode")
-  @Mapping(target = "schoolMetrics", ignore = true)
-  @Mapping(target = "code", ignore = true)
-  School toEntity(SchoolCreateRequest request);
+  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+  void updateEntity(@MappingTarget School school, SchoolUpdateRequest request);
 
   @Named("localDateTimeToInstant")
   default Instant localDateTimeToInstant(LocalDateTime localDateTime) {
     return localDateTime != null
-      ? localDateTime.toInstant(ZoneOffset.UTC)
-      : null;
+            ? localDateTime.toInstant(ZoneOffset.UTC)
+            : null;
   }
 }

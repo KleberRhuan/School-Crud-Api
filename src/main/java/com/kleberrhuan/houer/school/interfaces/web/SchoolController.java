@@ -8,19 +8,16 @@ import com.kleberrhuan.houer.common.interfaces.dto.response.PaginatedResponse;
 import com.kleberrhuan.houer.school.application.service.MetricCatalogService;
 import com.kleberrhuan.houer.school.application.service.SchoolQueryService;
 import com.kleberrhuan.houer.school.application.service.SchoolService;
-import com.kleberrhuan.houer.school.interfaces.dto.SchoolCreateRequest;
-import com.kleberrhuan.houer.school.interfaces.dto.SchoolDto;
-import com.kleberrhuan.houer.school.interfaces.dto.SchoolFilterSpec;
-import com.kleberrhuan.houer.school.interfaces.dto.SchoolMetricsDto;
-import com.kleberrhuan.houer.school.interfaces.dto.SchoolUpdateRequest;
+import com.kleberrhuan.houer.school.interfaces.dto.*;
 import jakarta.validation.Valid;
-import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Set;
 
 /** Controller REST para consultas de dados de escolas. */
 @RestController
@@ -35,8 +32,7 @@ public class SchoolController implements SchoolControllerDocumentation {
 
   @PostMapping
   public ResponseEntity<SchoolDto> createSchool(
-    @Valid @RequestBody SchoolCreateRequest request
-  ) {
+          @Valid @RequestBody SchoolCreateRequest request) {
     try {
       SchoolDto createdSchool = schoolService.create(request);
       return ResponseEntity.status(HttpStatus.CREATED).body(createdSchool);
@@ -47,9 +43,8 @@ public class SchoolController implements SchoolControllerDocumentation {
 
   @PutMapping("/{code}")
   public ResponseEntity<SchoolDto> updateSchool(
-    @PathVariable Long code,
-    @Valid @RequestBody SchoolUpdateRequest request
-  ) {
+          @PathVariable Long code,
+          @Valid @RequestBody SchoolUpdateRequest request) {
     try {
       SchoolDto updatedSchool = schoolService.update(code, request);
       return ResponseEntity.ok(updatedSchool);
@@ -61,54 +56,50 @@ public class SchoolController implements SchoolControllerDocumentation {
   @GetMapping("/{code}")
   public ResponseEntity<SchoolDto> getSchoolByCode(@PathVariable Long code) {
     return schoolQueryService
-      .findSchoolByCode(code)
-      .map(ResponseEntity::ok)
-      .orElse(ResponseEntity.notFound().build());
+            .findSchoolByCode(code)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
   }
 
   @GetMapping
   public ResponseEntity<PaginatedResponse<List<SchoolDto>>> getAllSchools(
-    PageableRequest pageableRequest,
-    @RequestParam(required = false) String name,
-    @RequestParam(required = false) String municipalityName,
-    @RequestParam(required = false) String stateAbbreviation,
-    @RequestParam(required = false) Integer operationalStatus,
-    @RequestParam(required = false) Integer dependencyType,
-    @RequestParam(required = false) Short schoolType,
-    @RequestParam(required = false) String administrativeRegion,
-    @RequestParam(required = false) String administrativeDependence,
-    @RequestParam(required = false) String location,
-    @RequestParam(required = false) String situation
-  ) {
+          PageableRequest pageableRequest,
+          @RequestParam(required = false) String name,
+          @RequestParam(required = false) String municipalityName,
+          @RequestParam(required = false) String stateAbbreviation,
+          @RequestParam(required = false) Integer operationalStatus,
+          @RequestParam(required = false) Integer dependencyType,
+          @RequestParam(required = false) Short schoolType,
+          @RequestParam(required = false) String administrativeRegion,
+          @RequestParam(required = false) String administrativeDependence,
+          @RequestParam(required = false) String location,
+          @RequestParam(required = false) String situation) {
     var filter = new SchoolFilterSpec(
-      null,
-      name,
-      municipalityName,
-      stateAbbreviation,
-      operationalStatus,
-      dependencyType,
-      schoolType,
-      administrativeRegion,
-      null,
-      administrativeDependence,
-      location,
-      situation
-    );
+            null,
+            name,
+            municipalityName,
+            stateAbbreviation,
+            operationalStatus,
+            dependencyType,
+            schoolType,
+            administrativeRegion,
+            null,
+            administrativeDependence,
+            location,
+            situation);
 
-    PaginatedResponse<List<SchoolDto>> response =
-      schoolQueryService.findAllSchoolsWithCache(filter, pageableRequest);
+      PaginatedResponse<List<SchoolDto>> response = schoolQueryService.findAllSchoolsWithCache(filter, pageableRequest);
 
     return ResponseEntity.ok(response);
   }
 
   @GetMapping("/{code}/metrics")
   public ResponseEntity<SchoolMetricsDto> getSchoolMetrics(
-    @PathVariable Long code
-  ) {
+          @PathVariable Long code) {
     return schoolQueryService
-      .findSchoolMetrics(code)
-      .map(ResponseEntity::ok)
-      .orElseThrow(() -> new EntityNotFoundException("Escola", code));
+            .findSchoolMetrics(code)
+            .map(ResponseEntity::ok)
+            .orElseThrow(() -> new EntityNotFoundException("Escola", code));
   }
 
   @GetMapping("/metrics")
