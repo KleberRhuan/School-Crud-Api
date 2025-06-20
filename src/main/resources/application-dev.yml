@@ -45,6 +45,12 @@ spring:
                 action: none
     generate-ddl: false
 
+  # Cache local com Caffeine
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=1h
+
 # Configurações de logging
 logging:
   level:
@@ -76,6 +82,12 @@ api:
   swagger:
     enabled: true
 
+# Debug de email em desenvolvimento
+notification:
+  debug:
+    enabled: true
+    log-emails: true
+
 # Rate limiting mais permissivo em desenvolvimento
 app:
   rate-limit:
@@ -88,9 +100,21 @@ app:
     log-response-body: true
     log-only-failures: false
     max-body-size: 4096
-
-# Debug de email em desenvolvimento
-notification:
-  debug:
-    enabled: true
-    log-emails: true
+  # Controle de concorrência com cache local
+  concurrency:
+    email:
+      rate-limit:
+        enabled: true
+        max-per-hour: 3
+      idempotency:
+        enabled: true
+        ttl: 24h
+        cache-type: caffeine
+    csv:
+      user-lock:
+        enabled: true
+        timeout: 10s
+        lock-type: in-memory
+      optimistic-retry:
+        enabled: true
+        max-attempts: 3

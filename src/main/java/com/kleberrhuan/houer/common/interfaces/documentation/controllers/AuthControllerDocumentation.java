@@ -142,25 +142,24 @@ public interface AuthControllerDocumentation {
   @Operation(
     summary = "Verificar e-mail",
     description = """
-      Ativa a conta do usuário validando o token recebido por e-mail.\n          Em caso de sucesso, o usuário é redirecionado (HTTP 302) para a página de confirmação no front-end.\n          """
+      Ativa a conta do usuário validando o token recebido por e-mail. """
   )
   @ApiResponses(
     {
       @ApiResponse(
-        responseCode = "302",
+        responseCode = "200",
         description = "E-mail verificado com sucesso – redirecionamento para o front-end"
       ),
       @ApiResponse(ref = "#/components/responses/BadRequest"),
       @ApiResponse(ref = "#/components/responses/InternalServerError"),
     }
   )
-  void verify(
+  ResponseEntity<Void> verify(
     @Parameter(
       description = "Token de verificação enviado por email",
       required = true,
       example = "123e4567-e89b-12d3-a456-426614174000"
-    ) @RequestParam UUID token,
-    HttpServletResponse res
+    ) @RequestParam UUID token
   );
 
   @Operation(

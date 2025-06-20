@@ -28,12 +28,12 @@ CREATE TABLE IF NOT EXISTS account.users (
 );
 
 ALTER TABLE account.users
-    ADD CONSTRAINT IF NOT EXISTS fk_users_created_by
+    ADD CONSTRAINT fk_users_created_by
         FOREIGN KEY (created_by) REFERENCES account.users(id)
             ON DELETE SET NULL;
 
 ALTER TABLE account.users
-    ADD CONSTRAINT IF NOT EXISTS fk_users_updated_by
+    ADD CONSTRAINT fk_users_updated_by
         FOREIGN KEY (updated_by) REFERENCES account.users(id)
             ON DELETE SET NULL;
 
