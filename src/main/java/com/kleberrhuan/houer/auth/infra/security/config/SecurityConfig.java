@@ -1,8 +1,6 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.auth.infra.security.config;
 
-import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
-
 import com.kleberrhuan.houer.auth.domain.model.Role;
 import com.kleberrhuan.houer.auth.infra.error.ApiErrorAccessDeniedHandler;
 import com.kleberrhuan.houer.auth.infra.error.ApiErrorAuthenticationEntryPoint;
@@ -26,6 +24,8 @@ import org.springframework.security.oauth2.server.resource.web.authentication.Be
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.CrossOriginOpenerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
+
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @EnableWebSecurity
@@ -63,7 +63,11 @@ public class SecurityConfig {
             "/ws/**",
             "/ws",
             "/ws-native",
-            "/ws-native/**"
+                  "/ws-native/**",
+                  "/api/v1/ws/**",
+                  "/api/v1/ws-native",
+                  "/api/v1/ws-native/**",
+                  "/api/v1/ws/info"
           )
           .permitAll();
         a.requestMatchers(HttpMethod.GET, "/actuator/**").permitAll();
