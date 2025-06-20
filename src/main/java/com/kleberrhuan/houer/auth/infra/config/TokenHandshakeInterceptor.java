@@ -31,7 +31,7 @@ public class TokenHandshakeInterceptor implements HandshakeInterceptor {
     @NotNull ServerHttpResponse response,
     @NotNull WebSocketHandler wsHandler,
     @NotNull Map<String, Object> attributes
-  ) throws Exception {
+  ) {
     String token = getTokenFromQuery(request);
 
     if (token == null) {
