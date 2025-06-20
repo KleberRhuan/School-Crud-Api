@@ -10,6 +10,7 @@ import com.kleberrhuan.houer.school.interfaces.dto.SchoolCreateRequest;
 import com.kleberrhuan.houer.school.interfaces.dto.SchoolDto;
 import com.kleberrhuan.houer.school.interfaces.dto.SchoolUpdateRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,10 +33,11 @@ public class SchoolService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = {"schoolsPage", "metricCatalog"}, allEntries = true)
   public SchoolDto update(Long code, SchoolUpdateRequest req) {
     School school = repo
-      .findWithMetricsByCode(code)
-      .orElseThrow(() -> new EntityNotFoundException("Escola", code));
+            .findWithMetricsByCode(code)
+            .orElseThrow(() -> new EntityNotFoundException("Escola", code));
 
     factory.updateFromRequest(school, req);
     school.setSchoolMetrics(req.metrics());

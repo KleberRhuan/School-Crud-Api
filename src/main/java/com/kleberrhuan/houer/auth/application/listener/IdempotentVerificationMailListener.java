@@ -47,7 +47,10 @@ public class IdempotentVerificationMailListener {
 
     Cache cache = cacheManager.getCache(CACHE_NAME);
     if (cache == null) {
-      log.error("Cache '{}' não encontrado, enviando sem idempotência", CACHE_NAME);
+        log.error(
+                "Cache '{}' não encontrado, enviando sem idempotência",
+                CACHE_NAME
+        );
       sendVerificationEmail(evt);
       return;
     }
@@ -63,7 +66,12 @@ public class IdempotentVerificationMailListener {
       markSent(cache, keyBase);
       log.info("Email de verificação enviado para {}", evt.email());
     } catch (Exception ex) {
-      log.error("Erro ao enviar email para {}: {}", evt.email(), ex.getMessage(), ex);
+        log.error(
+                "Erro ao enviar email para {}: {}",
+                evt.email(),
+                ex.getMessage(),
+                ex
+        );
       cache.evict(keyBase + PROCESSING_SUFFIX);
       throw ex;
     } finally {
@@ -73,7 +81,9 @@ public class IdempotentVerificationMailListener {
 
   private String generateKey(String email, String token) {
     String raw = email + ':' + token;
-    String hash = DigestUtils.md5DigestAsHex(raw.getBytes(StandardCharsets.UTF_8));
+      String hash = DigestUtils.md5DigestAsHex(
+              raw.getBytes(StandardCharsets.UTF_8)
+      );
     return VERIFY_CHANNEL + ':' + hash;
   }
 
