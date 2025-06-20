@@ -1,7 +1,6 @@
 # src/main/resources/application-dev.yml
 spring:
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/houer}
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
@@ -34,7 +33,23 @@ spring:
         format_sql: true
         use_sql_comments: true
         generate_statistics: false
+        hbm2ddl:
+          auto: none
+        # Desabilita schema validation
+        jakarta:
+          persistence:
+            schema-generation:
+              scripts:
+                action: none
+              database:
+                action: none
     generate-ddl: false
+
+  # Cache local com Caffeine
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=1h
 
 # Configurações de logging
 logging:
@@ -67,6 +82,12 @@ api:
   swagger:
     enabled: true
 
+# Debug de email em desenvolvimento
+notification:
+  debug:
+    enabled: true
+    log-emails: true
+
 # Rate limiting mais permissivo em desenvolvimento
 app:
   rate-limit:
@@ -79,9 +100,21 @@ app:
     log-response-body: true
     log-only-failures: false
     max-body-size: 4096
-
-# Debug de email em desenvolvimento
-notification:
-  debug:
-    enabled: true
-    log-emails: true
+  # Controle de concorrência com cache local
+  concurrency:
+    email:
+      rate-limit:
+        enabled: true
+        max-per-hour: 3
+      idempotency:
+        enabled: true
+        ttl: 24h
+        cache-type: caffeine
+    csv:
+      user-lock:
+        enabled: true
+        timeout: 10s
+        lock-type: in-memory
+      optimistic-retry:
+        enabled: true
+        max-attempts: 3

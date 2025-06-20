@@ -9,7 +9,10 @@ import java.util.Set;
 import org.mapstruct.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@Mapper(componentModel = "spring", imports = { Set.class, com.kleberrhuan.houer.auth.domain.model.Role.class })
+@Mapper(
+  componentModel = "spring",
+  imports = { Set.class, com.kleberrhuan.houer.auth.domain.model.Role.class }
+)
 public interface UserMapper extends GenericMapper<User, UserResponse> {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "passwordHash", ignore = true)
@@ -19,9 +22,10 @@ public interface UserMapper extends GenericMapper<User, UserResponse> {
 
   @AfterMapping
   default void hashPassword(
-      RegisterRequest dto,
-      @MappingTarget User user,
-      @Context PasswordEncoder encoder) {
+    RegisterRequest dto,
+    @MappingTarget User user,
+    @Context PasswordEncoder encoder
+  ) {
     user.setPasswordHash(encoder.encode(dto.password()));
   }
 }

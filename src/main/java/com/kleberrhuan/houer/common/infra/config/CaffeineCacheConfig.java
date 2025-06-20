@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.kleberrhuan.houer.common.infra.properties.HouerProperties;
 import io.github.bucket4j.Bucket;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
@@ -65,6 +66,29 @@ public class CaffeineCacheConfig {
       .newBuilder()
       .maximumSize(s.maxSize())
       .expireAfterWrite(s.ttl())
+      .recordStats()
+      .build();
+  }
+
+  // ========== Caches para Controle de Concorrência ==========
+
+  /** Cache para idempotência de emails. TTL de 24h para evitar reenvios acidentais. */
+  @Bean("emailIdempotencyCache")
+  public Cache<String, String> emailIdempotencyCache() {
+    return Caffeine
+      .newBuilder()
+      .maximumSize(10_000)
+      .expireAfterWrite(24, TimeUnit.HOURS)
+      .recordStats()
+      .build();
+  }
+
+  @Bean("emailRateLimitCache")
+  public Cache<String, Integer> emailRateLimitCache() {
+    return Caffeine
+      .newBuilder()
+      .maximumSize(5_000)
+      .expireAfterWrite(1, TimeUnit.HOURS)
       .recordStats()
       .build();
   }

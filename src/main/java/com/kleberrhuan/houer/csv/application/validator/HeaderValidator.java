@@ -1,25 +1,29 @@
 /* (C)2025 Kleber Rhuan */
 package com.kleberrhuan.houer.csv.application.validator;
 
+import com.kleberrhuan.houer.csv.application.service.CsvColumnMetadataService;
 import com.kleberrhuan.houer.csv.domain.exception.HeaderValidationException;
 import com.kleberrhuan.houer.csv.domain.model.CsvSchoolColumn;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class HeaderValidator {
 
-  private static final Set<String> EXPECTED_COLUMNS = Arrays
+  private final CsvColumnMetadataService metadataService;
+
+  private static final Set<String> ALL_VALID_COLUMNS = Arrays
     .stream(CsvSchoolColumn.values())
     .map(Enum::name)
     .collect(Collectors.toUnmodifiableSet());
 
-  private static final int EXPECTED_SIZE = EXPECTED_COLUMNS.size();
   private static final char BOM = '\uFEFF';
 
   public String[] validate(String[] header, String filename) {
@@ -32,32 +36,37 @@ public class HeaderValidator {
       .map(this::cleanColumnName)
       .collect(Collectors.toCollection(LinkedHashSet::new));
 
-    Set<String> extraColumns = headerSet
+    // Verificar se há colunas inválidas (não reconhecidas)
+    Set<String> invalidColumns = headerSet
       .stream()
-      .filter(column -> !EXPECTED_COLUMNS.contains(column))
+      .filter(column -> !ALL_VALID_COLUMNS.contains(column))
       .collect(Collectors.toSet());
 
-    if (!extraColumns.isEmpty()) {
-      throw new HeaderValidationException(filename, extraColumns, true);
+    if (!invalidColumns.isEmpty()) {
+      throw new HeaderValidationException(filename, invalidColumns, true);
     }
 
-    Set<String> missingColumns = EXPECTED_COLUMNS
+    // Verificar se as colunas obrigatórias básicas estão presentes
+    Set<String> requiredBasicColumns = metadataService
+      .getRequiredHeaders()
+      .stream()
+      .map(Enum::name)
+      .collect(Collectors.toSet());
+
+    Set<String> missingBasicColumns = requiredBasicColumns
       .stream()
       .filter(column -> !headerSet.contains(column))
       .collect(Collectors.toSet());
 
-    if (!missingColumns.isEmpty()) {
-      throw new HeaderValidationException(filename, missingColumns);
-    }
-
-    if (headerSet.size() != EXPECTED_SIZE) {
-      throw new HeaderValidationException(filename, headerSet.size());
+    if (!missingBasicColumns.isEmpty()) {
+      throw new HeaderValidationException(filename, missingBasicColumns);
     }
 
     log.debug(
-      "Header de {} validado com sucesso: {} colunas presentes",
+      "Header de {} validado com sucesso: {} colunas presentes (de {} possíveis)",
       filename,
-      headerSet.size()
+      headerSet.size(),
+      ALL_VALID_COLUMNS.size()
     );
 
     return headerSet.toArray(String[]::new);

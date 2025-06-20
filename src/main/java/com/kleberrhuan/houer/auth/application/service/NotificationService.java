@@ -14,7 +14,7 @@ public class NotificationService {
 
   private final ApplicationEventPublisher eventPublisher;
 
-  @Value("${app.verification.url-path:/api/v1/auth/verify}")
+  @Value("${app.verification.url-path:/auth/verified}")
   private String verificationUrlPath;
 
   public void publishUserRegisteredEvent(

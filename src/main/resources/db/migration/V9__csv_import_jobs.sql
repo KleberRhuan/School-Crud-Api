@@ -4,7 +4,7 @@
 CREATE SCHEMA IF NOT EXISTS csv;
 
 -- Tabela para controlar importações
-CREATE TABLE csv.csv_import_job (
+CREATE TABLE IF NOT EXISTS csv.csv_import_job (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   filename      TEXT NOT NULL,
   status        TEXT NOT NULL CHECK (status IN ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED')),
@@ -23,9 +23,9 @@ CREATE TABLE csv.csv_import_job (
 );
 
 -- Índices
-CREATE INDEX idx_csv_import_status ON csv.csv_import_job(status);
-CREATE INDEX idx_csv_import_created_by ON csv.csv_import_job(created_by);
-CREATE INDEX idx_csv_import_created_at ON csv.csv_import_job(created_at);
+CREATE INDEX IF NOT EXISTS idx_csv_import_status ON csv.csv_import_job(status);
+CREATE INDEX IF NOT EXISTS idx_csv_import_created_by ON csv.csv_import_job(created_by);
+CREATE INDEX IF NOT EXISTS idx_csv_import_created_at ON csv.csv_import_job(created_at);
 
 -- Comentários
 COMMENT ON TABLE csv.csv_import_job IS 'Controle de jobs de importação CSV';

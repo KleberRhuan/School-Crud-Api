@@ -48,20 +48,47 @@ public class BrevoEmailSender implements EmailNotification {
   @CircuitBreaker(name = "brevo-email", fallbackMethod = "fallback")
   @Observed(name = "email.brevo.send")
   public void send(@Valid NotificationModel n) {
-    SendSmtpEmail payload = mapper.toBrevo(n, props);
-    SendSmtpEmailResponse resp = this.send(payload, provider());
-    log.info("Email sent via brevo: messageId={}", resp.messageId());
+    try {
+      SendSmtpEmail payload = mapper.toBrevo(n, props);
+      SendSmtpEmailResponse resp = this.send(payload, provider());
+      log.info("Email sent via brevo: messageId={}", resp.messageId());
+    } catch (EmailDeliveryException e) {
+      log.warn("Email delivery failed for {}: {}", n.to(), e.getMessage());
+      throw e;
+    } catch (Exception e) {
+      log.warn(
+        "Email service error for {} (will retry): {}",
+        n.to(),
+        e.getMessage()
+      );
+      throw new RuntimeException("Temporary email service error", e);
+    }
   }
 
   @Counted(value = "email.outbox.total", extraTags = { "provider", "brevo" })
   public void fallback(NotificationModel n, Throwable ex) {
-    store.save(OutboxMessage.create(n));
     log.warn(
-      "Email routed to outbox: to={} subject='{}' cause={}",
+      "Email fallback triggered for {}: {} - Routing to outbox",
       n.to(),
-      n.subject(),
-      ex.toString()
+      ex.getMessage()
     );
+
+    try {
+      store.save(OutboxMessage.create(n));
+      log.info(
+        "Email routed to outbox: to={} subject='{}'",
+        n.to(),
+        n.subject()
+      );
+    } catch (Exception outboxEx) {
+      log.error(
+        "Failed to save email to outbox: to={} subject='{}' error={}",
+        n.to(),
+        n.subject(),
+        outboxEx.getMessage()
+      );
+      throw new RuntimeException("Failed to route email to outbox", outboxEx);
+    }
   }
 
   public SendSmtpEmailResponse send(SendSmtpEmail m, Provider p) {

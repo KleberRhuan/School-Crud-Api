@@ -1,5 +1,5 @@
 /* ============== PASSWORD RESET TOKENS ================================== */
-CREATE TABLE account.password_reset (
+CREATE TABLE IF NOT EXISTS account.password_reset (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      BIGINT       NOT NULL,
     token_hash   CHAR(255)     NOT NULL,
@@ -16,11 +16,11 @@ CREATE TABLE account.password_reset (
 );
 
 -- Índice composto para consultas de validação
-CREATE INDEX idx_password_reset_user_expires 
+CREATE INDEX IF NOT EXISTS idx_password_reset_user_expires 
     ON account.password_reset (user_id, expires_at);
 
 -- Índice para busca por hash do token
-CREATE INDEX idx_password_reset_token_hash 
+CREATE INDEX IF NOT EXISTS idx_password_reset_token_hash 
     ON account.password_reset (token_hash);
 
 -- Comentários para documentação
